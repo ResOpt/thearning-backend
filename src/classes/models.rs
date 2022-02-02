@@ -27,12 +27,13 @@ pub struct NewClassroom {
 }
 
 impl Classroom {
-    pub fn create(class: Self, connection: &PgConnection) -> QueryResult<Self> {
+    pub fn create(class: NewClassroom, connection: &PgConnection) -> QueryResult<Self> {
         let codes = get_class_codes(connection)?;
         let generate_code = generate_class_code(&codes);
         let new_class = Self {
             class_id: generate_code,
-            ..class
+            class_name: class.class_name,
+            section: class.section,
         };
         diesel::insert_into(classes::table)
             .values(&new_class)

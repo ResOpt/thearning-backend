@@ -132,6 +132,17 @@ impl User {
             Err(e) => Err("User does not exist".to_string()),
         }
     }
+
+    pub fn get_id_from_email(email: &String, connection: &PgConnection) -> Result<String, String> {
+        let res = users::table
+            .filter(users::email.eq(email))
+            .get_result::<Self>(connection);
+
+        match res {
+            Ok(user) => Ok(user.id),
+            Err(e) => Err("User does not exist".to_string()),
+        }
+    }
 }
 
 impl Student {
@@ -152,11 +163,11 @@ impl Student {
 }
 
 impl Teacher {
-    pub fn create(uid: String, class_id: String, connection: &PgConnection) -> QueryResult<Self> {
+    pub fn create(uid: &String, class_id: &String, connection: &PgConnection) -> QueryResult<Self> {
         let x = Self {
             id: generate_random_id(),
-            teacher_id: uid,
-            class_id: class_id,
+            teacher_id: uid.to_string(),
+            class_id: class_id.to_string(),
         };
         diesel::insert_into(teachers::table)
             .values(&x)

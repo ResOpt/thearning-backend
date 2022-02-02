@@ -1,3 +1,3 @@
 pub mod models;
 pub mod routes;
-mod utils;
+pub(crate) mod utils;

@@ -19,6 +19,7 @@ pub(crate) struct Claims {
     pub(crate) exp: usize,
 }
 
+#[derive(Clone)]
 pub struct ApiKey(pub String);
 
 pub fn generate_token(key: &String, role: &Role) -> Result<String, Errors> {

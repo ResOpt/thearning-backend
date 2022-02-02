@@ -6,8 +6,6 @@
 
 use rocket::response::content::Json;
 
-use crate::users::routes;
-
 mod users;
 mod classes;
 
@@ -18,9 +16,13 @@ mod utils;
 mod errors;
 mod test;
 
+use users::routes as user_routes;
+use classes::routes as class_routes;
+
 fn main() {
     let mut rocket = rocket::ignite()
         .manage(db::init_pool());
-    rocket = routes::mount(rocket);
+    rocket = user_routes::mount(rocket);
+    rocket = class_routes::mount(rocket);
     rocket.launch();
 }
