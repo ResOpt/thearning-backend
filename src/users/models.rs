@@ -1,23 +1,19 @@
-use crate::schema::users;
-use crate::schema::students;
-use crate::schema::teachers;
-
-use crate::classes::models::*;
-use crate::users::utils::*;
-use crate::db;
-
-use rocket_contrib::json::{Json, JsonValue};
-
+use std::fmt;
 use std::path::Path;
 
-use diesel;
-use diesel::prelude::*;
-use diesel::pg::PgConnection;
-
-use serde::{Serialize,Deserialize};
-
 use bcrypt::{DEFAULT_COST, hash, verify};
-use std::fmt;
+use diesel;
+use diesel::pg::PgConnection;
+use diesel::prelude::*;
+use rocket_contrib::json::{Json, JsonValue};
+use serde::{Deserialize, Serialize};
+
+use crate::classes::models::*;
+use crate::db;
+use crate::schema::students;
+use crate::schema::teachers;
+use crate::schema::users;
+use crate::users::utils::*;
 
 pub enum Role {
     Student,
@@ -75,10 +71,9 @@ pub struct Teacher {
 }
 
 impl User {
-
     pub fn create(user: Self, connection: &PgConnection) -> QueryResult<Self> {
         let hashed = Self {
-            password: hash(user.password,DEFAULT_COST).unwrap(),
+            password: hash(user.password, DEFAULT_COST).unwrap(),
             ..user
         };
         diesel::insert_into(users::table)
@@ -94,20 +89,19 @@ impl User {
             res = users::table
                 .filter(users::email.eq(key_))
                 .get_result::<Self>(connection);
-        }
-        else {
+        } else {
             res = users::table
                 .filter(users::id.eq(key_))
                 .get_result::<Self>(connection);
         }
         match res {
             Ok(user) => {
-                if let Ok(matching) = verify(&password_,&user.password) {
+                if let Ok(matching) = verify(&password_, &user.password) {
                     if matching {
-                        return Some(user)
+                        return Some(user);
                     }
                 }
-                return None
+                return None;
             }
             Err(_) => {
                 None
@@ -121,8 +115,7 @@ impl User {
             res = users::table
                 .filter(users::email.eq(key_))
                 .get_result::<Self>(connection);
-        }
-        else {
+        } else {
             res = users::table
                 .filter(users::id.eq(key_))
                 .get_result::<Self>(connection);
@@ -155,10 +148,9 @@ impl Student {
         diesel::insert_into(students::table)
             .values(&x)
             .execute(connection)?;
-            // .map(|_| Json(json!({"success": true, "status": "teacher"})))
-            // .map_err(|e| Json(json!({"success":false, "message":e.to_string()})))
+        // .map(|_| Json(json!({"success": true, "status": "teacher"})))
+        // .map_err(|e| Json(json!({"success":false, "message":e.to_string()})))
         students::table.order(students::student_id.desc()).first(connection)
-
     }
 }
 
@@ -172,9 +164,8 @@ impl Teacher {
         diesel::insert_into(teachers::table)
             .values(&x)
             .execute(connection)?;
-            // .map(|_| Json(json!({"success": true, "status": "teacher"})))
-            // .map_err(|e| Json(json!({"success":false, "message":e.to_string()})))
+        // .map(|_| Json(json!({"success": true, "status": "teacher"})))
+        // .map_err(|e| Json(json!({"success":false, "message":e.to_string()})))
         teachers::table.order(teachers::teacher_id.desc()).first(connection)
-
     }
 }

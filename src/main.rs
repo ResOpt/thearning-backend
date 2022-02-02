@@ -1,10 +1,16 @@
 #![feature(decl_macro)]
 
-#[macro_use] extern crate diesel;
-#[macro_use] extern crate rocket;
-#[macro_use] extern crate rocket_contrib;
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate rocket;
+#[macro_use]
+extern crate rocket_contrib;
 
 use rocket::response::content::Json;
+
+use classes::routes as class_routes;
+use users::routes as user_routes;
 
 mod users;
 mod classes;
@@ -15,9 +21,6 @@ pub mod db;
 mod utils;
 mod errors;
 mod test;
-
-use users::routes as user_routes;
-use classes::routes as class_routes;
 
 fn main() {
     let mut rocket = rocket::ignite()

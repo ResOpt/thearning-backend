@@ -1,15 +1,13 @@
-use crate::schema::classes;
-use crate::classes::utils::*;
-
 use std::path::Path;
 
-use diesel;
-use diesel::prelude::*;
-use diesel::pg::PgConnection;
-
-use serde::{Serialize,Deserialize};
-
 use bcrypt::{DEFAULT_COST, hash, verify};
+use diesel;
+use diesel::pg::PgConnection;
+use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
+
+use crate::classes::utils::*;
+use crate::schema::classes;
 
 #[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable)]
 #[table_name = "classes"]

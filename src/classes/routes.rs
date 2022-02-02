@@ -1,15 +1,16 @@
+use diesel::RunQueryDsl;
+use rocket::{self, routes};
+use rocket::http::Status;
+use rocket_contrib::json::{Json, JsonValue};
+
 use crate::auth::ApiKey;
-use crate::users::models::{User, Role, Teacher};
-use crate::schema::users;
+use crate::classes::models::{Classroom, NewClassroom};
+use crate::db;
 use crate::schema::students;
 use crate::schema::teachers;
+use crate::schema::users;
+use crate::users::models::{Role, Teacher, User};
 use crate::users::utils::is_email;
-use rocket_contrib::json::{Json, JsonValue};
-use rocket::http::Status;
-use rocket::{self, routes};
-use crate::db;
-use crate::classes::models::{Classroom, NewClassroom};
-use diesel::RunQueryDsl;
 
 #[post("/create", data = "<new_class>")]
 pub fn create_classroom(key: ApiKey, new_class: Json<NewClassroom>, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
@@ -25,13 +26,12 @@ pub fn create_classroom(key: ApiKey, new_class: Json<NewClassroom>, connection: 
                             if let Ok(v) = User::get_id_from_email(&key.0, &connection) {
                                 Teacher::create(&v, &id.class_id, &connection).unwrap();
                             }
-                        }
-                        else {
+                        } else {
                             Teacher::create(&key.0, &id.class_id, &connection).unwrap();
                         }
 
                         Ok(Json(json!({ "success": true, "class_id":  &id.class_id})))
-                    },
+                    }
                     Err(e) => Err(Status::InternalServerError)
                 }
             }
@@ -42,8 +42,7 @@ pub fn create_classroom(key: ApiKey, new_class: Json<NewClassroom>, connection: 
                 }
             }
         }
-    }
-    else {
+    } else {
         Err(Status::Forbidden)
     }
 }

@@ -1,13 +1,13 @@
+use jsonwebtoken::{Algorithm, Header};
+use rocket::http::Status;
 use rocket_contrib::json::{Json, JsonValue};
 use serde::{Deserialize, Serialize};
 
-use crate::users::models::{User, Role};
-use rocket::http::Status;
+use crate::auth::{ApiKey, Claims, generate_token};
 use crate::db;
-use jsonwebtoken::{Header, Algorithm};
-use crate::auth::{Claims, generate_token, ApiKey};
+use crate::users::models::{Role, User};
 
-#[post("/create", format="application/json", data = "<user>")]
+#[post("/create", format = "application/json", data = "<user>")]
 fn create(user: Json<User>, connection: db::DbConn) -> Result<Json<User>, Status> {
     User::create(user.into_inner(), &connection)
         .map(Json)
@@ -17,11 +17,11 @@ fn create(user: Json<User>, connection: db::DbConn) -> Result<Json<User>, Status
 #[derive(Serialize, Deserialize)]
 struct Credentials {
     key: String,
-    password: String
+    password: String,
 }
 
 #[post("/login", data = "<credentials>")]
-fn login(credentials: Json<Credentials>, connection: db::DbConn) ->  Result<Json<JsonValue>, Status> {
+fn login(credentials: Json<Credentials>, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
     let header: Header = Header::new(Algorithm::HS512);
     let key = credentials.key.to_string();
     let password = credentials.password.to_string();
@@ -29,11 +29,11 @@ fn login(credentials: Json<Credentials>, connection: db::DbConn) ->  Result<Json
     match User::get_by_key(&key, password, &connection) {
         None => {
             Err(Status::NotFound)
-        },
+        }
         Some(user) => {
             match User::get_role(&key, &connection) {
                 Ok(k) => {
-                    match generate_token(&key, &k){
+                    match generate_token(&key, &k) {
                         Ok(v) => Ok(Json(json!({ "success": true, "token": v }))),
                         Err(_) => Err(Status::InternalServerError)
                     }

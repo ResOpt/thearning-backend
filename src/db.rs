@@ -1,12 +1,13 @@
+use std::env;
+use std::ops::Deref;
+
 use diesel::pg::PgConnection;
+use dotenv::dotenv;
 use r2d2;
 use r2d2_diesel::ConnectionManager;
 use rocket::{Outcome, Request, State};
 use rocket::http::Status;
 use rocket::request::{self, FromRequest};
-use dotenv::dotenv;
-use std::env;
-use std::ops::Deref;
 
 type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 

@@ -1,11 +1,10 @@
-use rand::{thread_rng, Rng};
-use rand::distributions::Alphanumeric;
-
-use diesel::pg::PgConnection;
-use diesel::query_dsl::QueryDsl;
-use diesel::prelude::*;
-use diesel::result::Error;
 use diesel::Connection;
+use diesel::pg::PgConnection;
+use diesel::prelude::*;
+use diesel::query_dsl::QueryDsl;
+use diesel::result::Error;
+use rand::{Rng, thread_rng};
+use rand::distributions::Alphanumeric;
 
 use crate::schema::classes;
 
@@ -22,8 +21,7 @@ pub fn generate_class_code(existing_codes: &Vec<String>) -> String {
 
     if existing_codes.contains(&code) {
         generate_class_code(existing_codes)
-    }
-    else {
+    } else {
         code
     }
 }

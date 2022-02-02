@@ -1,12 +1,12 @@
-use serde::{Serialize, Deserialize};
-use jsonwebtoken::{encode, decode, Header, Algorithm, Validation, EncodingKey, DecodingKey};
-use rocket::Outcome;
-use rocket::request::{self, Request, FromRequest};
-
-use crate::utils::read_file;
 use chrono::Utc;
-use crate::users::models::Role;
+use jsonwebtoken::{Algorithm, decode, DecodingKey, encode, EncodingKey, Header, Validation};
+use rocket::Outcome;
+use rocket::request::{self, FromRequest, Request};
+use serde::{Deserialize, Serialize};
+
 use crate::errors::Errors;
+use crate::users::models::Role;
+use crate::utils::read_file;
 
 pub(crate) const SECRET: &[u8] = include_bytes!("../secrets");
 const ONE_WEEK: usize = 60 * 60 * 24 * 7;
@@ -23,7 +23,6 @@ pub(crate) struct Claims {
 pub struct ApiKey(pub String);
 
 pub fn generate_token(key: &String, role: &Role) -> Result<String, Errors> {
-
     let now = (Utc::now().timestamp_nanos() / 1_000_000_00) as usize;
 
     let claims = Claims {
