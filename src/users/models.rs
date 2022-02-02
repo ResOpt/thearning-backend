@@ -114,6 +114,24 @@ impl User {
             }
         }
     }
+
+    pub fn get_role(key_: &String, connection: &PgConnection) -> Result<Role, String> {
+        let res;
+        if is_email(key_) {
+            res = users::table
+                .filter(users::email.eq(key_))
+                .get_result::<Self>(connection);
+        }
+        else {
+            res = users::table
+                .filter(users::id.eq(key_))
+                .get_result::<Self>(connection);
+        }
+        match res {
+            Ok(user) => Role::from_str(&user.status),
+            Err(e) => Err("User does not exist".to_string()),
+        }
+    }
 }
 
 impl Student {

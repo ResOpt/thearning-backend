@@ -31,9 +31,16 @@ fn login(credentials: Json<Credentials>, connection: db::DbConn) ->  Result<Json
             Err(Status::NotFound)
         },
         Some(user) => {
-            match generate_token(&key, &Role::Student){
-                Ok(v) => Ok(Json(json!({ "success": true, "token": v }))),
-                Err(_) => Err(Status::InternalServerError)
+            match User::get_role(&key, &connection) {
+                Ok(k) => {
+                    match generate_token(&key, &k){
+                        Ok(v) => Ok(Json(json!({ "success": true, "token": v }))),
+                        Err(_) => Err(Status::InternalServerError)
+                    }
+                }
+                Err(e) => {
+                    Err(Status::InternalServerError)
+                }
             }
         }
     }
