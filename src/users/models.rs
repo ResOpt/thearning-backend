@@ -17,11 +17,33 @@ use diesel::pg::PgConnection;
 use serde::{Serialize,Deserialize};
 
 use bcrypt::{DEFAULT_COST, hash, verify};
+use std::fmt;
 
-pub enum Status {
-    Admin,
-    Teacher,
+pub enum Role {
     Student,
+    Teacher,
+    Admin,
+}
+
+impl Role {
+    pub fn from_str(role: &str) -> Result<Self, String> {
+        match role {
+            "admin" => Ok(Self::Admin),
+            "teacher" => Ok(Self::Teacher),
+            "student" => Ok(Self::Student),
+            _ => Err("Invalid role".to_string()),
+        }
+    }
+}
+
+impl fmt::Display for Role {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Role::Teacher => write!(f, "Teacher"),
+            Role::Admin => write!(f, "Admin"),
+            Role::Student => write!(f, "Student"),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable)]
@@ -66,9 +88,9 @@ impl User {
         users::table.order(users::id.desc()).first(connection)
     }
 
-    pub fn get_by_key(key_: String, password_: String, connection: &PgConnection) -> Option<Self> {
+    pub fn get_by_key(key_: &String, password_: String, connection: &PgConnection) -> Option<Self> {
         let res;
-        if is_email(&key_) {
+        if is_email(key_) {
             res = users::table
                 .filter(users::email.eq(key_))
                 .get_result::<Self>(connection);

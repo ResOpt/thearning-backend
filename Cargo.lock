@@ -1471,6 +1471,7 @@ name = "thearning-backend"
 version = "0.1.0"
 dependencies = [
  "bcrypt",
+ "chrono",
  "diesel",
  "dotenv",
  "hmac 0.12.0",
