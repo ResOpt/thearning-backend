@@ -139,11 +139,11 @@ impl User {
 }
 
 impl Student {
-    pub fn create(uid: String, class_id: String, connection: &PgConnection) -> QueryResult<Self> {
+    pub fn create(uid: &String, class_id: &String, connection: &PgConnection) -> QueryResult<Self> {
         let x = Self {
             id: generate_random_id(),
-            student_id: uid,
-            class_id: class_id,
+            student_id: uid.to_string(),
+            class_id: class_id.to_string(),
         };
         diesel::insert_into(students::table)
             .values(&x)
