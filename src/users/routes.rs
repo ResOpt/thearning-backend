@@ -47,7 +47,7 @@ fn login(credentials: Json<Credentials>, connection: db::DbConn) -> Result<Json<
 }
 
 // This is just for testing purpose
-#[get("/info")]
+#[get("/info", format = "application/json")]
 fn info(key: ApiKey) -> Json<JsonValue> {
     Json(json!(
         {

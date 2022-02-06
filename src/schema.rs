@@ -35,7 +35,7 @@ table! {
         submitted_date -> Date,
         submitted_time -> Time,
         on_time -> Bool,
-        marks_alloted -> Int4,
+        marks_allotted -> Nullable<Int4>,
         submission_file -> Nullable<Varchar>,
     }
 }

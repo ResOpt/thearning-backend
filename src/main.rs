@@ -12,6 +12,7 @@ use rocket::response::content::Json;
 use classes::routes as class_routes;
 use users::routes as user_routes;
 use assignments::routes as assignment_routes;
+use errors::mount as error_routes;
 
 mod users;
 mod classes;
@@ -23,6 +24,7 @@ mod utils;
 mod errors;
 mod test;
 mod assignments;
+mod submissions;
 
 fn main() {
     let mut rocket = rocket::ignite()
@@ -30,5 +32,6 @@ fn main() {
     rocket = user_routes::mount(rocket);
     rocket = class_routes::mount(rocket);
     rocket = assignment_routes::mount(rocket);
+    rocket = error_routes(rocket);
     rocket.launch();
 }

@@ -4,7 +4,7 @@ use std::ops::Deref;
 use diesel::pg::PgConnection;
 use dotenv::dotenv;
 use r2d2;
-use r2d2_diesel::ConnectionManager;
+use diesel::r2d2::ConnectionManager;
 use rocket::{Outcome, Request, State};
 use rocket::http::Status;
 use rocket::request::{self, FromRequest};
