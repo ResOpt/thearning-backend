@@ -26,8 +26,11 @@ fn unauthorized() -> Json<JsonValue> {
 
 #[catch(404)]
 fn not_found() -> Json<JsonValue> {
-    Jason(jason!({"success":false, "code": 404}))
+    Json(json!({"success":false, "code": 404}))
 }
+
+#[catch(400)]
+fn bad_request() -> Json<JsonValue> { Json(json!({"success":false, "code":400})) }
 
 pub fn mount(rocket: rocket::Rocket) -> rocket::Rocket {
     rocket.register(catchers![unauthorized, not_found])

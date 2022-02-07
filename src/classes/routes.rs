@@ -53,32 +53,33 @@ pub fn create_classroom(key: ApiKey, new_class: Json<NewClassroom>, connection: 
 //pub struct ClassCode(pub String);
 
 #[post("/join/<class_id>")]
-pub fn join(key: ApiKey, class_id: String, connection: db::DbConn) -> Result<Json<JsonValue>, Json<JsonValue>> {
+pub fn join(key: ApiKey, class_id: String, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
     let mut _key = key.0.clone();
 
     if is_email(&key.0) {
-        if let Ok(id) = User::get_id_from_email(&key.0, &connection) {
-            _key = id;
+        match User::get_id_from_email(&key.0, &connection) {
+            Ok(id) => { _key = id; }
+            Err(_) => return Err(Status::NotFound)
         }
     }
 
     let codes = get_class_codes(&connection).unwrap();
 
     if !codes.contains(&class_id) {
-        return Err(Json(json!({"success":false, "message":"Invalid Class!!"})))
+        return Err(Status::NotFound)
     }
 
     if let Ok(r) = User::get_role(&_key, &connection) {
         match r {
             Role::Student => {
                 Student::create(&_key, &class_id, &connection)
-                    .map(|_| Json(json!({"success":true})))
-                    .map_err(|_| Json(json!({"success":false, "message":"user already exist"})))
+                    .map(|_| Json(json!({"success":true, "role":"student"})))
+                    .map_err(|_| Status::BadRequest)
             }
             Role::Teacher => {
                 Teacher::create(&_key, &class_id, &connection)
-                    .map(|_| Json(json!({"success":true})))
-                    .map_err(|_| Json(json!({"success":false, "message":"user already exist"})))
+                    .map(|_| Json(json!({"success":true, "role":"student"})))
+                    .map_err(|_| Status::BadRequest)
             }
             Role::Admin => {
                 //TODO
@@ -87,7 +88,7 @@ pub fn join(key: ApiKey, class_id: String, connection: db::DbConn) -> Result<Jso
         }
     }
     else {
-        Err(Json(json!({"success":false})))
+        Err(Status::BadRequest)
     }
 }
 
