@@ -22,7 +22,7 @@ table! {
 table! {
     students (id) {
         id -> Int4,
-        student_id -> Varchar,
+        user_id -> Varchar,
         class_id -> Varchar,
     }
 }
@@ -31,7 +31,7 @@ table! {
     submissions (submission_id) {
         submission_id -> Varchar,
         assignment_id -> Varchar,
-        student_id -> Varchar,
+        user_id -> Varchar,
         submitted_date -> Date,
         submitted_time -> Time,
         on_time -> Bool,
@@ -43,14 +43,14 @@ table! {
 table! {
     teachers (id) {
         id -> Int4,
-        teacher_id -> Varchar,
+        user_id -> Varchar,
         class_id -> Varchar,
     }
 }
 
 table! {
-    users (id) {
-        id -> Varchar,
+    users (user_id) {
+        user_id -> Varchar,
         fullname -> Varchar,
         profile_photo -> Varchar,
         email -> Varchar,
@@ -61,9 +61,10 @@ table! {
 }
 
 joinable!(assignments -> classes (class_id));
-joinable!(students -> users (student_id));
+joinable!(students -> users (user_id));
 joinable!(submissions -> assignments (assignment_id));
-joinable!(teachers -> users (teacher_id));
+joinable!(submissions -> users (user_id));
+joinable!(teachers -> users (user_id));
 
 allow_tables_to_appear_in_same_query!(
     assignments,

@@ -15,7 +15,7 @@ use crate::assignments::utils::{generate_random_id, get_ids};
 pub struct Submissions {
     pub submission_id: String,
     pub assignment_id: String,
-    pub student_id: String,
+    pub user_id: String,
     pub submitted_date: Option<NaiveDate>,
     pub submitted_time: Option<NaiveTime>,
     pub on_time: bool,

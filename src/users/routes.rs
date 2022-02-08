@@ -7,7 +7,7 @@ use crate::auth::{ApiKey, Claims, generate_token};
 use crate::db;
 use crate::users::models::{Role, User};
 
-#[post("/create", format = "application/json", data = "<user>")]
+#[post("/create", data = "<user>")]
 fn create(user: Json<User>, connection: db::DbConn) -> Result<Json<User>, Status> {
     User::create(user.into_inner(), &connection)
         .map(Json)
