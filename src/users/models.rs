@@ -24,12 +24,12 @@ pub enum Role {
 }
 
 impl Role {
-    pub fn from_str(role: &str) -> Result<Self, String> {
+    pub fn from_str(role: &str) -> Result<Self, ()> {
         match role {
             "admin" => Ok(Self::Admin),
             "teacher" => Ok(Self::Teacher),
             "student" => Ok(Self::Student),
-            _ => Err("Invalid role".to_string()),
+            _ => Err(()),
         }
     }
 }

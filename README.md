@@ -18,6 +18,3 @@ for maintaining to my school.
 
 # Contribution
 PRs are welcome and they would probably save my time, too.
-
-# Building
-This is Rust, man. Just clone and run `cargo build`
