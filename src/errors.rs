@@ -33,5 +33,5 @@ fn not_found() -> Json<JsonValue> {
 fn bad_request() -> Json<JsonValue> { Json(json!({"success":false, "code":400})) }
 
 pub fn mount(rocket: rocket::Rocket) -> rocket::Rocket {
-    rocket.register(catchers![unauthorized, not_found])
+    rocket.register(catchers![unauthorized, not_found, bad_request])
 }

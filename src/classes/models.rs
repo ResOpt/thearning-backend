@@ -37,6 +37,6 @@ impl Classroom {
             .values(&new_class)
             .execute(connection)?;
 
-        classes::table.order(classes::class_id.desc()).first(connection)
+        classes::table.find(new_class.class_id).get_result::<Self>(connection)
     }
 }

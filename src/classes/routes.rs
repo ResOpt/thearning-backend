@@ -10,7 +10,9 @@ use crate::auth::ApiKey;
 use crate::classes::models::{Classroom, NewClassroom};
 use crate::db;
 use crate::schema::students::dsl::students;
+use crate::schema::classes::dsl::classes as class_q;
 use crate::schema::teachers;
+use crate::schema::assignments::dsl::assignments;
 use crate::users::models::{Role, Teacher, User, Student};
 use crate::users::utils::is_email;
 use crate::classes::utils::get_class_codes;
@@ -83,7 +85,7 @@ pub fn join(key: ApiKey, class_id: String, connection: db::DbConn) -> Result<Jso
             }
             Role::Teacher => {
                 Teacher::create(&_key, &class_id, &connection)
-                    .map(|_| Json(json!({"success":true, "role":"student"})))
+                    .map(|_| Json(json!({"success":true, "role":"teacher"})))
                     .map_err(|_| Status::BadRequest)
             }
             Role::Admin => {
@@ -118,13 +120,28 @@ fn classrooms(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, St
                 .load::<Student>(&*connection)
                 .unwrap();
 
-            Ok(Json(json!({"class_id":student
-                .into_iter()
-                .map(|x| x.class_id)
-                .collect::<Vec<_>>()})))
+            let mut c: Vec<Classroom> = Vec::new();
+            for i in student {
+                let class = class_q.find(i.class_id).get_result::<Classroom>(&*connection).unwrap();
+                c.push(class);
+            }
+
+            Ok(Json(json!({"class_id":c})))
         },
         _ => Ok(Json(json!({"status":"guru/admin"})))
     }
+}
+
+#[get("/<class_id>")]
+fn class(key: ApiKey, class_id: String, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
+    let mut key_ = key.0.clone();
+    if is_email(&key.0) {
+        key_ = match User::get_id_from_email(&key.0, &connection) {
+            Ok(v) => v,
+            Err(e) => return Err(Status::BadRequest)
+        }
+    }
+    unimplemented!()
 }
 
 pub fn mount(rocket: rocket::Rocket) -> rocket::Rocket {
