@@ -38,7 +38,7 @@ jobs:
         run: |
           cargo install diesel_cli
           export "PATH=~/.cargo/bin:$PATH"
-          diesel migration run
+          diesel migration run --database-url "postgres://postgres:postgres@localhost/thearningdb"
       - name: Build
         run: |
           cargo build
