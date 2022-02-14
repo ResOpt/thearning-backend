@@ -12,10 +12,26 @@ table! {
 }
 
 table! {
+    attachments (attachment_id) {
+        attachment_id -> Varchar,
+        file_id -> Varchar,
+        assignment_id -> Varchar,
+    }
+}
+
+table! {
     classes (class_id) {
         class_id -> Varchar,
         class_name -> Varchar,
         section -> Varchar,
+    }
+}
+
+table! {
+    files (file_id) {
+        file_id -> Varchar,
+        filename -> Varchar,
+        filetype -> Varchar,
     }
 }
 
@@ -61,6 +77,8 @@ table! {
 }
 
 joinable!(assignments -> classes (class_id));
+joinable!(attachments -> assignments (assignment_id));
+joinable!(attachments -> files (file_id));
 joinable!(students -> classes (class_id));
 joinable!(students -> users (user_id));
 joinable!(submissions -> assignments (assignment_id));
@@ -70,7 +88,9 @@ joinable!(teachers -> users (user_id));
 
 allow_tables_to_appear_in_same_query!(
     assignments,
+    attachments,
     classes,
+    files,
     students,
     submissions,
     teachers,

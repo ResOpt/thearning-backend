@@ -1,0 +1,43 @@
+name: Build and Run
+
+on: [push]
+
+jobs:
+  build:
+    name: Build Ubuntu
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_HOST: postgres
+          POSTGRES_PORT: 5432
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Database
+        env:
+          PGPASSWORD: postgres
+          DATABASE_URL: postgres://postgres:postgres@localhost/thearningdb
+
+        run: |
+          sudo apt update
+          sudo apt install -y postgresql postgresql-contrib
+          pg_ctlcluster 12 main start
+          psql -h localhost -U postgres -c 'CREATE DATABASE "thearningdb";'
+      - name: Setup rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+          components: rustc, cargo, rust-std, clippy, rustfmt
+      - name: Install diesel
+        run: |
+          cargo install diesel_cli
+          export "PATH=~/.cargo/bin:$PATH"
+          diesel migration run
+      - name: Build
+        run: |
+          cargo build

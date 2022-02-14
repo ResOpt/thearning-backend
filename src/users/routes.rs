@@ -60,12 +60,15 @@ fn info(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, Status> 
         Ok(user) => {
             Ok(Json(
                 json!({
+                    "code": 200,
+                    "data": {
                     "user_id": user.user_id,
                     "fullname": user.fullname,
                     "profile_photo": user.profile_photo,
                     "email": user.email,
                     "bio": user.bio,
                     "status": user.status,
+                        }
                 })
             ))
         }
