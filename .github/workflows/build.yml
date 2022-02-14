@@ -25,8 +25,8 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y postgresql postgresql-contrib
-          pg_ctlcluster 12 main start
-          psql -h localhost -U postgres -c 'CREATE DATABASE "thearningdb";'
+          sudo pg_ctlcluster 12 main start
+          sudo psql -h localhost -U postgres -c 'CREATE DATABASE "thearningdb";'
       - name: Setup rust
         uses: actions-rs/toolchain@v1
         with:
