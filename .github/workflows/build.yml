@@ -10,6 +10,7 @@ jobs:
       postgres:
         image: postgres
         env:
+          DATABASE_HOST: localhost
           POSTGRES_PASSWORD: postgres
           POSTGRES_HOST: postgres
           POSTGRES_PORT: 5432
@@ -26,7 +27,7 @@ jobs:
           sudo apt update
           sudo apt install -y postgresql postgresql-contrib
           sudo pg_ctlcluster 12 main start
-          sudo psql -h localhost -U postgres -c 'CREATE DATABASE "thearningdb";'
+          psql -h localhost -U postgres -c 'CREATE DATABASE "thearningdb";'
       - name: Setup rust
         uses: actions-rs/toolchain@v1
         with:
