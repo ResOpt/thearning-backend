@@ -16,7 +16,7 @@ pub fn init_pool() -> Pool {
     Pool::new(manager).expect("db pool")
 }
 
-fn database_url() -> String {
+pub fn database_url() -> String {
     dotenv().ok();
     env::var("DATABASE_URL").expect("DATABASE_URL must be set")
 }

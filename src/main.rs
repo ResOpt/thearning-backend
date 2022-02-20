@@ -28,31 +28,34 @@ mod errors;
 mod test;
 mod assignments;
 mod submissions;
+mod files;
 
 use rocket_cors::{
 AllowedHeaders, AllowedOrigins, Error,
 Cors, CorsOptions
 };
 
+#[cfg(debug_assertions)]
+fn allowed_origins() -> AllowedOrigins {
+    AllowedOrigins::all()
+}
+
+#[cfg(not(debug_assertions))]
+fn allowed_origins() -> AllowedOrigins {
+    AllowedOrigins::some_exact(&[
+        "http://www.domain.tld",
+        "http://127.0.0.1:5000"
+    ])
+}
+
+
 fn make_cors() -> Cors {
-    let allowed_origins = AllowedOrigins::some_exact(&[
-        "http://localhost:8080",
-        "http://127.0.0.1:8080",
-        "http://127.0.0.1:5000",
-        "http://localhost:8000",
-        "http://0.0.0.0:8000",
-    ]);
+    let allowed_origins = allowed_origins();
 
     CorsOptions {
         allowed_origins,
-        allowed_methods: vec![Method::Get, Method::Post].into_iter().map(From::from).collect(),
-        allowed_headers: AllowedHeaders::some(&[
-            "Authentication",
-            "Accept",
-            "Access-Control-Allow-Origin",
-            "Content-Type",
-            "Origin",
-        ]),
+        allowed_methods: vec![Method::Get, Method::Post, Method::Options].into_iter().map(From::from).collect(),
+        allowed_headers: AllowedHeaders::all(),
         allow_credentials: true,
         ..Default::default()
     }

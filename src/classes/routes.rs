@@ -146,5 +146,5 @@ fn class(key: ApiKey, class_id: String, connection: db::DbConn) -> Result<Json<J
 
 pub fn mount(rocket: rocket::Rocket) -> rocket::Rocket {
     rocket
-        .mount("/classroom", routes![create_classroom, join, classrooms])
+        .mount("/api/classroom", routes![create_classroom, join, classrooms])
 }

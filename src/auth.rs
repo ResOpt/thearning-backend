@@ -1,13 +1,16 @@
 use chrono::{Utc, Local};
+use diesel::{Connection, PgConnection};
 use jsonwebtoken::{Algorithm, decode, DecodingKey, encode, EncodingKey, Header, Validation};
 use rocket::Outcome;
 use rocket::request::{self, FromRequest, Request};
 use serde::{Deserialize, Serialize};
 
 use crate::errors::Errors;
-use crate::users::models::Role;
+use crate::users::models::{Role, User};
 use crate::utils::read_file;
 use rocket::http::Status;
+use crate::db::{self, database_url};
+use crate::users::utils::is_email;
 
 pub(crate) const SECRET: &[u8] = include_bytes!("../secrets");
 const ONE_WEEK: usize = 60 * 60 * 24 * 7;
@@ -26,8 +29,21 @@ pub struct ApiKey(pub String);
 pub fn generate_token(key: &String, role: &Role) -> Result<String, Errors> {
     let now = (Local::now().timestamp_nanos() / 1_000_000_00) as usize;
 
+    let mut sub = key.clone();
+    let dbConn = match PgConnection::establish(&database_url()) {
+        Ok(c) => c,
+        Err(_) => return Err(Errors::FailedToCreateJWT)
+    };
+
+    if is_email(key) {
+        sub = match User::get_id_from_email(key, &dbConn) {
+            Ok(ok) => ok,
+            Err(_) => return Err(Errors::FailedToCreateJWT)
+        };
+    }
+
     let claims = Claims {
-        sub: key.to_string(),
+        sub,
         iat: now,
         role: role.to_string(),
         exp: now + ONE_WEEK,
