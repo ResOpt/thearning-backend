@@ -1,4 +1,12 @@
 table! {
+    admins (id) {
+        id -> Int4,
+        user_id -> Varchar,
+        class_id -> Varchar,
+    }
+}
+
+table! {
     assignments (assignment_id) {
         assignment_id -> Varchar,
         assignment_name -> Varchar,
@@ -76,6 +84,8 @@ table! {
     }
 }
 
+joinable!(admins -> classes (class_id));
+joinable!(admins -> users (user_id));
 joinable!(assignments -> classes (class_id));
 joinable!(attachments -> assignments (assignment_id));
 joinable!(attachments -> files (file_id));
@@ -87,6 +97,7 @@ joinable!(teachers -> classes (class_id));
 joinable!(teachers -> users (user_id));
 
 allow_tables_to_appear_in_same_query!(
+    admins,
     assignments,
     attachments,
     classes,

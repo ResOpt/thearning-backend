@@ -8,6 +8,6 @@ CREATE TABLE submissions(
     marks_allotted INT,
     submission_file VARCHAR,
 
-    FOREIGN KEY (assignment_id) REFERENCES assignments(assignment_id),
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    FOREIGN KEY (assignment_id) REFERENCES assignments(assignment_id) ON DELETE NO ACTION,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE NO ACTION
 )

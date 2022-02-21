@@ -20,7 +20,7 @@ struct Credentials {
     password: String,
 }
 
-#[post("/", format = "application/x-www-form-urlencoded", data = "<credentials>")]
+#[post("/", format = "application/json", data = "<credentials>")]
 fn login(credentials: Json<Credentials>, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
     let header: Header = Header::new(Algorithm::HS512);
     let key = credentials.key.to_string();

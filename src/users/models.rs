@@ -13,6 +13,7 @@ use crate::db;
 use crate::schema::students;
 use crate::schema::teachers;
 use crate::schema::users;
+use crate::schema::admins;
 use crate::users::utils::*;
 
 use diesel::associations::BelongsTo;
@@ -74,6 +75,15 @@ pub struct Teacher {
     pub class_id: String,
 }
 
+#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable)]
+#[belongs_to(User)]
+#[table_name = "admins"]
+pub struct Admin {
+    pub id: i32,
+    pub user_id: String,
+    pub class_id: String,
+}
+
 impl User {
     pub fn create(user: Self, connection: &PgConnection) -> QueryResult<Self> {
         let hashed = Self {
@@ -92,16 +102,10 @@ impl User {
     }
 
     pub fn get_by_key(key_: &String, password_: String, connection: &PgConnection) -> Option<Self> {
-        let res;
-        if is_email(key_) {
-            res = users::table
-                .filter(users::email.eq(key_))
-                .get_result::<Self>(connection);
-        } else {
-            res = users::table
+        let res = users::table
                 .filter(users::user_id.eq(key_))
                 .get_result::<Self>(connection);
-        }
+
         match res {
             Ok(user) => {
                 if let Ok(matching) = verify(&password_, &user.password) {
@@ -156,8 +160,6 @@ impl Student {
         diesel::insert_into(students::table)
             .values(&x)
             .execute(connection)?;
-        // .map(|_| Json(json!({"success": true, "status": "teacher"})))
-        // .map_err(|e| Json(json!({"success":false, "message":e.to_string()})))
         students::table.order(students::user_id.desc()).first(connection)
     }
 }
@@ -172,8 +174,19 @@ impl Teacher {
         diesel::insert_into(teachers::table)
             .values(&x)
             .execute(connection)?;
-        // .map(|_| Json(json!({"success": true, "status": "teacher"})))
-        // .map_err(|e| Json(json!({"success":false, "message":e.to_string()})))
+        teachers::table.order(teachers::user_id.desc()).first(connection)
+    }
+}
+impl Admin {
+    pub fn create(uid: &String, class_id: &String, connection: &PgConnection) -> QueryResult<Self> {
+        let x = Self {
+            id: generate_random_id(),
+            user_id: uid.to_string(),
+            class_id: class_id.to_string(),
+        };
+        diesel::insert_into(admins::table)
+            .values(&x)
+            .execute(connection)?;
         teachers::table.order(teachers::user_id.desc()).first(connection)
     }
 }

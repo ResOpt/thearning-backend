@@ -8,5 +8,5 @@ CREATE TABLE assignments(
     instructions TEXT,
     total_marks INT,
 
-    FOREIGN KEY (class_id) REFERENCES classes(class_id)
+    FOREIGN KEY (class_id) REFERENCES classes(class_id) ON DELETE NO ACTION
 )

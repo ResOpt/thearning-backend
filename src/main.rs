@@ -65,10 +65,10 @@ fn make_cors() -> Cors {
 
 fn main() {
     let mut rocket = rocket::ignite()
-        .manage(db::init_pool()).attach(make_cors());
+        .manage(db::init_pool());
     rocket = user_routes::mount(rocket);
     rocket = class_routes::mount(rocket);
     rocket = assignment_routes::mount(rocket);
-    rocket = error_routes(rocket);
+    rocket = error_routes(rocket).attach(make_cors());
     rocket.launch();
 }

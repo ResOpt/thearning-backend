@@ -11,17 +11,20 @@ use crate::classes::models::{Classroom, NewClassroom};
 use crate::db;
 use crate::schema::students::dsl::students;
 use crate::schema::classes::dsl::classes as class_q;
-use crate::schema::teachers;
+use crate::schema::teachers::dsl::teachers;
 use crate::schema::assignments::dsl::assignments;
-use crate::users::models::{Role, Teacher, User, Student};
+use crate::users::models::{Role, Teacher, User, Student, Admin};
 use crate::users::utils::is_email;
 use crate::classes::utils::get_class_codes;
 use crate::db::DbConn;
+use crate::schema::admins::dsl::admins;
 use crate::schema::classes;
-use crate::schema::students::user_id;
+use crate::schema::students::user_id as student_id;
+use crate::schema::teachers::user_id as teacher_id;
+use crate::schema::admins::user_id as admin_id;
 use crate::schema::users;
 
-#[post("/create", data = "<new_class>")]
+#[post("/", data = "<new_class>", rank = 1)]
 pub fn create_classroom(key: ApiKey, new_class: Json<NewClassroom>, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
     if let Ok(r) = User::get_role(&key.0, &connection) {
         match r {
@@ -59,16 +62,8 @@ pub fn create_classroom(key: ApiKey, new_class: Json<NewClassroom>, connection: 
 //#[derive(Serialize, Deserialize)]
 //pub struct ClassCode(pub String);
 
-#[post("/join/<class_id>")]
+#[post("/<class_id>", rank = 2)]
 pub fn join(key: ApiKey, class_id: String, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
-    let mut _key = key.0.clone();
-
-    if is_email(&key.0) {
-        match User::get_id_from_email(&key.0, &connection) {
-            Ok(id) => { _key = id; }
-            Err(_) => return Err(Status::NotFound)
-        }
-    }
 
     let codes = get_class_codes(&connection).unwrap();
 
@@ -76,21 +71,22 @@ pub fn join(key: ApiKey, class_id: String, connection: db::DbConn) -> Result<Jso
         return Err(Status::NotFound)
     }
 
-    if let Ok(r) = User::get_role(&_key, &connection) {
+    if let Ok(r) = User::get_role(&key.0, &connection) {
         match r {
             Role::Student => {
-                Student::create(&_key, &class_id, &connection)
+                Student::create(&key.0, &class_id, &connection)
                     .map(|_| Json(json!({"success":true, "role":"student"})))
                     .map_err(|_| Status::BadRequest)
             }
             Role::Teacher => {
-                Teacher::create(&_key, &class_id, &connection)
+                Teacher::create(&key.0, &class_id, &connection)
                     .map(|_| Json(json!({"success":true, "role":"teacher"})))
                     .map_err(|_| Status::BadRequest)
             }
             Role::Admin => {
-                //TODO
-                unimplemented!()
+                Admin::create(&key.0, &class_id, &connection)
+                    .map(|_| Json(json!({"success":true, "role":"admin"})))
+                    .map_err(|_| Status::BadRequest)
             }
         }
     }
@@ -99,21 +95,14 @@ pub fn join(key: ApiKey, class_id: String, connection: db::DbConn) -> Result<Jso
     }
 }
 
-#[get("/")]
+#[get("/", rank = 1)]
 fn classrooms(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
-    let mut key_ = key.0.clone();
-    if is_email(&key.0) {
-        key_ = match User::get_id_from_email(&key.0, &connection) {
-            Ok(v) => v,
-            Err(e) => return Err(Status::BadRequest)
-        }
-    }
 
-    let user = users::table.find(key_).get_result::<User>(&*connection);
+    let user = users::table.find(&key.0).get_result::<User>(&*connection);
     match Role::from_str(user.as_ref().unwrap().status.as_str()).unwrap() {
         Role::Student => {
             let student = students
-                .filter(user_id
+                .filter(student_id
                     .eq(user
                         .unwrap()
                         .user_id))
@@ -128,11 +117,44 @@ fn classrooms(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, St
 
             Ok(Json(json!({"class_id":c})))
         },
-        _ => Ok(Json(json!({"status":"guru/admin"})))
+        Role::Teacher => {
+            let teacher = teachers
+                .filter(teacher_id
+                    .eq(user
+                        .unwrap()
+                        .user_id))
+                .load::<Teacher>(&*connection)
+                .unwrap();
+
+            let mut c: Vec<Classroom> = Vec::new();
+            for i in teacher {
+                let class = class_q.find(i.class_id).get_result::<Classroom>(&*connection).unwrap();
+                c.push(class);
+            }
+
+            Ok(Json(json!({"class_id":c})))
+        }
+        Role::Admin => {
+            let admin = admins
+                .filter(admin_id
+                    .eq(user
+                        .unwrap()
+                        .user_id))
+                .load::<Admin>(&*connection)
+                .unwrap();
+
+            let mut c: Vec<Classroom> = Vec::new();
+            for i in admin {
+                let class = class_q.find(i.class_id).get_result::<Classroom>(&*connection).unwrap();
+                c.push(class);
+            }
+
+            Ok(Json(json!({"class_id":c})))
+        }
     }
 }
 
-#[get("/<class_id>")]
+#[get("/<class_id>", rank = 2)]
 fn class(key: ApiKey, class_id: String, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
     let mut key_ = key.0.clone();
     if is_email(&key.0) {
