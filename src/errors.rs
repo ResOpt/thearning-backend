@@ -6,7 +6,8 @@ use rocket::Request;
 pub enum Errors {
     FailedToCreateJWT,
     TokenExpired,
-    TokenInvalid
+    TokenInvalid,
+    UserAlreadyExist,
 }
 
 impl fmt::Display for Errors {
@@ -15,6 +16,7 @@ impl fmt::Display for Errors {
             Errors::FailedToCreateJWT => write!(f, "Failed to create JWT!"),
             Errors::TokenExpired => write!(f, "Token is already expired!"),
             Errors::TokenInvalid => write!(f, "Token is invalid!"),
+            Errors::UserAlreadyExist => write!(f, "User already exist!"),
         }
     }
 }
@@ -32,6 +34,12 @@ fn not_found() -> Json<JsonValue> {
 #[catch(400)]
 fn bad_request() -> Json<JsonValue> { Json(json!({"success":false, "code":400})) }
 
+#[catch(409)]
+fn conflict() -> Json<JsonValue> { Json(json!({"success":false, "code": 409})) }
+
+#[catch(500)]
+fn server_error() -> Json<JsonValue> { Json(json!({"success":false, "code": 500})) }
+
 pub fn mount(rocket: rocket::Rocket) -> rocket::Rocket {
-    rocket.register(catchers![unauthorized, not_found, bad_request])
+    rocket.register(catchers![unauthorized, not_found, bad_request, conflict, server_error])
 }

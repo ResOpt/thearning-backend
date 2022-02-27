@@ -1,3 +1,4 @@
+use chrono::format::Item::Error;
 use jsonwebtoken::{Algorithm, Header};
 use rocket::http::Status;
 use rocket_contrib::json::{Json, JsonValue};
@@ -6,12 +7,23 @@ use crate::auth::{ApiKey, Claims, generate_token};
 use crate::db;
 use crate::users::models::{Role, User};
 use crate::users::utils::is_email;
+use crate::errors::Errors;
 
 #[post("/", data = "<user>")]
 fn create(user: Json<User>, connection: db::DbConn) -> Result<Json<User>, Status> {
-    User::create(user.into_inner(), &connection)
-        .map(Json)
-        .map_err(|_| Status::InternalServerError)
+    let _user = user.into_inner();
+    match Role::from_str(&_user.status) {
+        Ok(_) => {},
+        Err(_) => return Err(Status::Conflict),
+    }
+    match User::create(_user, &connection) {
+        Ok(query) => {
+            Ok(Json(query))
+        }
+        Err(_) => {
+            Err(Status::Conflict)
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
