@@ -92,7 +92,7 @@ impl User {
             .values(&hashed)
             .execute(connection)?;
 
-        users::table.order(users::user_id.desc()).first(connection)
+        users::table.find(hashed.user_id).get_result::<Self>(connection)
     }
 
     pub fn find_user(uid: &String, connection: &PgConnection) -> QueryResult<Self> {
