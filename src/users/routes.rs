@@ -13,7 +13,7 @@ use crate::users::models::{Role, User};
 use crate::users::utils::is_email;
 
 #[post("/", data = "<user>")]
-fn create(user: Json<User>, connection: db::DbConn) -> Result<Json<User>, Status> {
+fn create(user: Json<User>, connection: db::DbConn) -> Result<Status, Status> {
     let _user = user.into_inner();
     match Role::from_str(&_user.status) {
         Ok(_) => {},
@@ -21,7 +21,7 @@ fn create(user: Json<User>, connection: db::DbConn) -> Result<Json<User>, Status
     }
     match User::create(_user, &connection) {
         Ok(query) => {
-            Ok(Json(query))
+            Ok(Status::Ok)
         }
         Err(_) => {
             Err(Status::Conflict)
@@ -49,7 +49,7 @@ fn login(credentials: Json<Credentials>, connection: db::DbConn) -> Result<Json<
             match User::get_role(&key, &connection) {
                 Ok(k) => {
                     match generate_token(&key, &k) {
-                        Ok(v) => Ok(Json(json!({ "success": true, "token": v }))),
+                        Ok(v) => Ok(Json(json!({ "status": 200, "token": v }))),
                         Err(_) => Err(Status::InternalServerError)
                     }
                 }
@@ -68,7 +68,7 @@ fn info(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, Status> 
         Ok(user) => {
             Ok(Json(
                 json!({
-                    "code": 200,
+                    "status": 200,
                     "data": {
                     "user_id": user.user_id,
                     "fullname": user.fullname,
