@@ -36,7 +36,7 @@ jobs:
           components: rustc, cargo, rust-std, clippy, rustfmt
       - name: Install diesel
         run: |
-          cargo install diesel_cli
+          cargo install diesel_cli --no-default-features --features "postgres"
           export "PATH=~/.cargo/bin:$PATH"
           diesel migration run --database-url "postgres://postgres:postgres@localhost/thearningdb"
       - name: Build
