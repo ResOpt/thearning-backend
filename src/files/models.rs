@@ -1,11 +1,10 @@
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
-use rocket_contrib::json::{Json, JsonValue};
 use serde::{Deserialize, Serialize};
 
-use crate::schema::files;
 use crate::db;
+use crate::schema::files;
 
 pub enum FileType {
     Video,

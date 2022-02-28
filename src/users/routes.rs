@@ -1,13 +1,16 @@
 use chrono::format::Item::Error;
 use jsonwebtoken::{Algorithm, Header};
 use rocket::http::Status;
-use rocket_contrib::json::{Json, JsonValue};
+use rocket::serde::json::Json;
+use rocket::serde::json::serde_json::json;
+use rocket_dyn_templates::handlebars::JsonValue;
 use serde::{Deserialize, Serialize};
+
 use crate::auth::{ApiKey, Claims, generate_token};
 use crate::db;
+use crate::errors::Errors;
 use crate::users::models::{Role, User};
 use crate::users::utils::is_email;
-use crate::errors::Errors;
 
 #[post("/", data = "<user>")]
 fn create(user: Json<User>, connection: db::DbConn) -> Result<Json<User>, Status> {
@@ -81,7 +84,7 @@ fn info(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, Status> 
     }
 }
 
-pub fn mount(rocket: rocket::Rocket) -> rocket::Rocket {
+pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     rocket
         .mount("/api/user", routes![create,info])
         .mount("/api/auth", routes![login])

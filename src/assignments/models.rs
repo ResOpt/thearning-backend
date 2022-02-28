@@ -1,14 +1,11 @@
-use chrono::{Date, NaiveDate, NaiveTime};
-
+use chrono::{NaiveDate, NaiveTime};
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
 
-use serde::{Serialize, Deserialize};
-
-use crate::classes::models::Classroom;
-use crate::schema::assignments;
 use crate::assignments::utils::{generate_random_id, get_ids};
+use crate::schema::assignments;
 
 #[derive(Serialize, Deserialize, Queryable, Insertable)]
 #[table_name = "assignments"]

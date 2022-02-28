@@ -1,28 +1,29 @@
 use diesel::{EqAll, QueryDsl, RunQueryDsl};
+use diesel::prelude::*;
 use rocket::{self, routes};
 use rocket::http::Status;
-use rocket_contrib::json::{Json, JsonValue};
-use serde::{Serialize, Deserialize};
-
-use diesel::prelude::*;
+use rocket::serde::json::Json;
+use rocket::serde::json::serde_json::json;
+use rocket_dyn_templates::handlebars::JsonValue;
+use serde::{Deserialize, Serialize};
 
 use crate::auth::ApiKey;
 use crate::classes::models::{Classroom, NewClassroom};
-use crate::db;
-use crate::schema::students::dsl::students;
-use crate::schema::classes::dsl::classes as class_q;
-use crate::schema::teachers::dsl::teachers;
-use crate::schema::assignments::dsl::assignments;
-use crate::users::models::{Role, Teacher, User, Student, Admin};
-use crate::users::utils::is_email;
 use crate::classes::utils::get_class_codes;
+use crate::db;
 use crate::db::DbConn;
 use crate::schema::admins::dsl::admins;
-use crate::schema::classes;
-use crate::schema::students::user_id as student_id;
-use crate::schema::teachers::user_id as teacher_id;
 use crate::schema::admins::user_id as admin_id;
+use crate::schema::assignments::dsl::assignments;
+use crate::schema::classes;
+use crate::schema::classes::dsl::classes as class_q;
+use crate::schema::students::dsl::students;
+use crate::schema::students::user_id as student_id;
+use crate::schema::teachers::dsl::teachers;
+use crate::schema::teachers::user_id as teacher_id;
 use crate::schema::users;
+use crate::users::models::{Admin, Role, Student, Teacher, User};
+use crate::users::utils::is_email;
 
 #[post("/", data = "<new_class>", rank = 1)]
 pub fn create_classroom(key: ApiKey, new_class: Json<NewClassroom>, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
@@ -166,7 +167,7 @@ fn class(key: ApiKey, class_id: String, connection: db::DbConn) -> Result<Json<J
     unimplemented!()
 }
 
-pub fn mount(rocket: rocket::Rocket) -> rocket::Rocket {
+pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     rocket
         .mount("/api/classroom", routes![create_classroom, join, classrooms])
 }

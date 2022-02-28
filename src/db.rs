@@ -2,11 +2,12 @@ use std::env;
 use std::ops::Deref;
 
 use diesel::pg::PgConnection;
+use diesel::r2d2::ConnectionManager;
 use dotenv::dotenv;
 use r2d2;
-use diesel::r2d2::ConnectionManager;
-use rocket::{Outcome, Request, State};
+use rocket::{Request, State};
 use rocket::http::Status;
+use rocket::outcome::try_outcome;
 use rocket::request::{self, FromRequest};
 
 type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
@@ -23,14 +24,15 @@ pub fn database_url() -> String {
 
 pub struct DbConn(pub r2d2::PooledConnection<ConnectionManager<PgConnection>>);
 
-impl<'a, 'r> FromRequest<'a, 'r> for DbConn {
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for DbConn {
     type Error = ();
 
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<DbConn, Self::Error> {
-        let pool = request.guard::<State<Pool>>()?;
+    async fn from_request(request: &'r Request<'_>) -> request::Outcome<DbConn, Self::Error> {
+        let pool = request.rocket().state::<Pool>().unwrap();
         match pool.get() {
-            Ok(conn) => Outcome::Success(DbConn(conn)),
-            Err(_) => Outcome::Failure((Status::ServiceUnavailable, ())),
+            Ok(conn) => request::Outcome::Success(DbConn(conn)),
+            Err(_) => request::Outcome::Failure((Status::ServiceUnavailable, ())),
         }
     }
 }

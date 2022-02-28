@@ -1,4 +1,4 @@
-use rand::{thread_rng, Rng};
+use rand::{Rng, thread_rng};
 
 pub fn is_email(s: &String) -> bool {
     s.as_str().contains("@")

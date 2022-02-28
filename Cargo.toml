@@ -7,9 +7,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rocket = "0.4.10"
-rocket_codegen = "0.4.10"
-rocket_contrib = "0.4.10"
+rocket = { version = "0.5.0-rc.1", features = ["json"] }
+rocket_dyn_templates = { version = "0.1.0-rc.1", features = ["handlebars"] }
 diesel = { version = "1.4.5", features = ["postgres", "chrono", "r2d2"] }
 dotenv = "0.15.0"
 rocket-multipart-form-data = "0.10.0"
@@ -22,5 +21,5 @@ bcrypt = "0.8"
 rand = "0.8.4"
 hmac = "0.12.0"
 sha2 = "0.10.1"
-rocket_cors = "0.5.0"
+rocket_cors = "0.6.0-alpha1"
 chrono = { version = "0.4.19", features=["serde"] }

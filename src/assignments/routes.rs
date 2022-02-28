@@ -1,12 +1,12 @@
-use jsonwebtoken::{Algorithm, Header};
 use rocket::http::Status;
-use rocket_contrib::json::{Json, JsonValue};
+use rocket::serde::json::Json;
+use rocket::serde::json::serde_json::json;
+use rocket_dyn_templates::handlebars::JsonValue;
 use serde::{Deserialize, Serialize};
 
-use crate::auth::{ApiKey, Claims, generate_token};
+use crate::assignments::models::{Assignments, FillableAssignments};
+use crate::auth::ApiKey;
 use crate::db;
-use crate::users::models::{Role, User};
-use crate::assignments::models::{FillableAssignments, Assignments};
 
 #[post("/create", data = "<data>")]
 fn create(key: ApiKey, data: Json<FillableAssignments>, conn: db::DbConn) -> Result<Json<JsonValue>, Json<JsonValue>> {
@@ -18,7 +18,7 @@ fn create(key: ApiKey, data: Json<FillableAssignments>, conn: db::DbConn) -> Res
     }
 }
 
-pub fn mount(rocket: rocket::Rocket) -> rocket::Rocket {
+pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     rocket
         .mount("/assignments", routes![create])
 }

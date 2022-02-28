@@ -1,15 +1,13 @@
-use chrono::{Utc, Local};
+use chrono::{Local, Utc};
 use diesel::{Connection, PgConnection};
 use jsonwebtoken::{Algorithm, decode, DecodingKey, encode, EncodingKey, Header, Validation};
-use rocket::Outcome;
+use rocket::http::Status;
 use rocket::request::{self, FromRequest, Request};
 use serde::{Deserialize, Serialize};
 
+use crate::db::{self, database_url};
 use crate::errors::Errors;
 use crate::users::models::{Role, User};
-use crate::utils::read_file;
-use rocket::http::Status;
-use crate::db::{self, database_url};
 use crate::users::utils::is_email;
 
 pub(crate) const SECRET: &[u8] = include_bytes!("../secrets");
@@ -30,13 +28,13 @@ pub fn generate_token(key: &String, role: &Role) -> Result<String, Errors> {
     let now = (Local::now().timestamp_nanos() / 1_000_000_00) as usize;
 
     let mut sub = key.clone();
-    let dbConn = match PgConnection::establish(&database_url()) {
+    let db_conn = match PgConnection::establish(&database_url()) {
         Ok(c) => c,
         Err(_) => return Err(Errors::FailedToCreateJWT)
     };
 
     if is_email(key) {
-        sub = match User::get_id_from_email(key, &dbConn) {
+        sub = match User::get_id_from_email(key, &db_conn) {
             Ok(ok) => ok,
             Err(_) => return Err(Errors::FailedToCreateJWT)
         };
@@ -71,17 +69,18 @@ pub fn read_token(key: &str) -> Result<String, Errors> {
     }
 }
 
-impl<'a, 'r> FromRequest<'a, 'r> for ApiKey {
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for ApiKey {
     type Error = Errors;
 
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<ApiKey, Errors> {
+    async fn from_request(request: &'r Request<'_>) -> request::Outcome<ApiKey, Errors> {
         let keys: Vec<_> = request.headers().get("Authentication").collect();
         if keys.len() != 1 {
-            return Outcome::Failure((Status::BadRequest, Errors::TokenInvalid));
+            return request::Outcome::Failure((Status::BadRequest, Errors::TokenInvalid));
         }
         match read_token(keys[0]) {
-            Ok(claim) => Outcome::Success(ApiKey(claim)),
-            Err(e) => Outcome::Failure((Status::Unauthorized, e))
+            Ok(claim) => request::Outcome::Success(ApiKey(claim)),
+            Err(e) => request::Outcome::Failure((Status::Unauthorized, e))
         }
     }
 }

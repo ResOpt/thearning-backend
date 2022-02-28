@@ -1,21 +1,20 @@
-#![feature(decl_macro)]
-
 #[macro_use]
 extern crate diesel;
 #[macro_use]
 extern crate rocket;
 extern crate rocket_cors;
-#[macro_use]
-extern crate rocket_contrib;
 
 use rocket::http::Method;
-
 use rocket::response::content::Json;
+use rocket_cors::{
+    AllowedHeaders, AllowedOrigins, Cors,
+    CorsOptions, Error
+};
 
-use classes::routes as class_routes;
-use users::routes as user_routes;
 use assignments::routes as assignment_routes;
+use classes::routes as class_routes;
 use errors::mount as error_routes;
+use users::routes as user_routes;
 
 mod users;
 mod classes;
@@ -29,11 +28,6 @@ mod test;
 mod assignments;
 mod submissions;
 mod files;
-
-use rocket_cors::{
-AllowedHeaders, AllowedOrigins, Error,
-Cors, CorsOptions
-};
 
 #[cfg(debug_assertions)]
 fn allowed_origins() -> AllowedOrigins {
@@ -63,12 +57,13 @@ fn make_cors() -> Cors {
         .expect("error while building CORS")
 }
 
-fn main() {
-    let mut rocket = rocket::ignite()
+#[launch]
+fn rocket() -> rocket::Rocket<rocket::Build> {
+    let mut rocket = rocket::build()
         .manage(db::init_pool());
     rocket = user_routes::mount(rocket);
     rocket = class_routes::mount(rocket);
     rocket = assignment_routes::mount(rocket);
     rocket = error_routes(rocket).attach(make_cors());
-    rocket.launch();
+    rocket
 }

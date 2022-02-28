@@ -1,14 +1,11 @@
 use chrono::{Date, NaiveDate, NaiveTime};
-
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
-
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::classes::models::Classroom;
 use crate::schema::submissions;
-use crate::assignments::utils::{generate_random_id, get_ids};
 
 #[derive(Serialize, Deserialize, Queryable, Insertable)]
 #[table_name = "submissions"]

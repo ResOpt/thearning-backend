@@ -3,20 +3,18 @@ use std::path::Path;
 
 use bcrypt::{DEFAULT_COST, hash, verify};
 use diesel;
+use diesel::associations::BelongsTo;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
-use rocket_contrib::json::{Json, JsonValue};
 use serde::{Deserialize, Serialize};
 
 use crate::classes::models::*;
 use crate::db;
+use crate::schema::admins;
 use crate::schema::students;
 use crate::schema::teachers;
 use crate::schema::users;
-use crate::schema::admins;
 use crate::users::utils::*;
-
-use diesel::associations::BelongsTo;
 
 pub enum Role {
     Student,

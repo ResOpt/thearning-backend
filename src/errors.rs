@@ -1,6 +1,9 @@
 use std::fmt;
-use rocket_contrib::json::{JsonValue, Json};
+
 use rocket::Request;
+use rocket::serde::json::Json;
+use rocket::serde::json::serde_json::json;
+use rocket_dyn_templates::handlebars::JsonValue;
 
 #[derive(Debug)]
 pub enum Errors {
@@ -40,6 +43,6 @@ fn conflict() -> Json<JsonValue> { Json(json!({"success":false, "code": 409})) }
 #[catch(500)]
 fn server_error() -> Json<JsonValue> { Json(json!({"success":false, "code": 500})) }
 
-pub fn mount(rocket: rocket::Rocket) -> rocket::Rocket {
-    rocket.register(catchers![unauthorized, not_found, bad_request, conflict, server_error])
+pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
+    rocket.register("/",catchers![unauthorized, not_found, bad_request, conflict, server_error])
 }
