@@ -31,7 +31,7 @@ jobs:
       - name: Setup rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: stable
           override: true
           components: rustc, cargo, rust-std, clippy, rustfmt
       - name: Install diesel
