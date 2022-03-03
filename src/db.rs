@@ -17,9 +17,16 @@ pub fn init_pool() -> Pool {
     Pool::new(manager).expect("db pool")
 }
 
+#[cfg(test)]
 pub fn database_url() -> String {
     dotenv().ok();
     env::var("DATABASE_URL").expect("DATABASE_URL must be set")
+}
+
+#[cfg(not(test))]
+pub fn database_url() -> String {
+    dotenv().ok();
+    env::var("DATABASE_URL_TEST").expect("DATABASE_URL must be set")
 }
 
 pub struct DbConn(pub r2d2::PooledConnection<ConnectionManager<PgConnection>>);
