@@ -35,14 +35,18 @@ fn not_found() -> Json<JsonValue> {
 }
 
 #[catch(400)]
-fn bad_request() -> Json<JsonValue> { Json(json!({"success":false, "code":400})) }
+fn bad_request() -> Json<JsonValue> { Json(json!({"success":false, "status":400})) }
 
 #[catch(409)]
-fn conflict() -> Json<JsonValue> { Json(json!({"success":false, "code": 409})) }
+fn conflict() -> Json<JsonValue> { Json(json!({"success":false, "status": 409})) }
 
 #[catch(500)]
-fn server_error() -> Json<JsonValue> { Json(json!({"success":false, "code": 500})) }
+fn server_error() -> Json<JsonValue> { Json(json!({"success":false, "status": 500})) }
+
+#[catch(403)]
+fn forbidden() -> Json<JsonValue> { Json(json!({"success":false, "status": 403})) }
+
 
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
-    rocket.register("/",catchers![unauthorized, not_found, bad_request, conflict, server_error])
+    rocket.register("/",catchers![unauthorized, not_found, bad_request, conflict, server_error, forbidden])
 }

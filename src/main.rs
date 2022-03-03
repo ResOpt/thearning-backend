@@ -24,7 +24,7 @@ pub mod schema;
 pub mod db;
 mod utils;
 mod errors;
-mod test;
+mod tests;
 mod assignments;
 mod submissions;
 mod files;
