@@ -16,7 +16,7 @@ use crate::users::utils::is_email;
 fn create(user: Json<User>, connection: db::DbConn) -> Result<Status, Status> {
     let _user = user.into_inner();
     match Role::from_str(&_user.status) {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(_) => return Err(Status::Conflict),
     }
     match User::create(_user, &connection) {
@@ -63,7 +63,6 @@ fn login(credentials: Json<Credentials>, connection: db::DbConn) -> Result<Json<
 
 #[get("/", format = "application/json")]
 fn info(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
-
     match User::find_user(&key.0, &connection) {
         Ok(user) => {
             Ok(Json(

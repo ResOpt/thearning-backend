@@ -48,5 +48,5 @@ fn forbidden() -> Json<JsonValue> { Json(json!({"success":false, "status": 403})
 
 
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
-    rocket.register("/",catchers![unauthorized, not_found, bad_request, conflict, server_error, forbidden])
+    rocket.register("/", catchers![unauthorized, not_found, bad_request, conflict, server_error, forbidden])
 }

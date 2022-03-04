@@ -20,7 +20,7 @@ impl FileType {
 }
 
 #[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations)]
-#[table_name="files"]
+#[table_name = "files"]
 pub struct UploadedFile {
     file_id: String,
     filename: String,

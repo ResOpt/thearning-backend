@@ -12,7 +12,7 @@ use rocket::http::Method;
 use rocket::response::content::Json;
 use rocket_cors::{
     AllowedHeaders, AllowedOrigins, Cors,
-    CorsOptions, Error
+    CorsOptions, Error,
 };
 
 use assignments::routes as assignment_routes;

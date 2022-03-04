@@ -2,35 +2,31 @@
 mod tests {
     extern crate diesel;
 
-    use self::diesel::prelude::*;
-
     use std::io::Read;
-    use rocket::http::{ContentType, Status, Header};
+
+    use rocket::http::{ContentType, Header, Status};
     use rocket::local::blocking::Client;
+    use rocket::serde::Deserialize;
     use rocket::serde::json::Json;
     use rocket::serde::json::serde_json::json;
-    use rocket::serde::Deserialize;
-
-    use rustc_serialize::json::ToJson;
     use rustc_serialize::json::Json as EnumJson;
+    use rustc_serialize::json::ToJson;
+
     use crate::auth::read_token;
-
-    use crate::rocket;
-
-    use crate::db::{self, database_url};
-
-    use crate::users::models::Student;
     use crate::classes::models::Classroom;
-
-
-    use crate::schema::users;
-    use crate::schema::users::dsl::users as users_object;
+    use crate::db::{self, database_url};
+    use crate::rocket;
     use crate::schema::classes;
     use crate::schema::classes::dsl::classes as classes_object;
-    use crate::schema::teachers::dsl::teachers as teachers_object;
-    use crate::schema::teachers;
-    use crate::schema::students::dsl::students as students_object;
     use crate::schema::students;
+    use crate::schema::students::dsl::students as students_object;
+    use crate::schema::teachers;
+    use crate::schema::teachers::dsl::teachers as teachers_object;
+    use crate::schema::users;
+    use crate::schema::users::dsl::users as users_object;
+    use crate::users::models::Student;
+
+    use self::diesel::prelude::*;
 
     #[derive(Deserialize)]
     struct Task {
@@ -188,7 +184,6 @@ mod tests {
 
     #[test]
     fn t_5_join_classroom() {
-
         let db_conn = PgConnection::establish(&database_url()).unwrap();
 
         // Getting auth token

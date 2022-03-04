@@ -35,7 +35,6 @@ pub fn create_classroom(key: ApiKey, new_class: Json<NewClassroom>, connection: 
             Role::Teacher => {
                 match Classroom::create(new_class.into_inner(), &connection) {
                     Ok(id) => {
-
                         Teacher::create(&key.0, &id.class_id, &connection).unwrap();
 
                         Ok(Json(json!({ "success": true, "class_id":  &id.class_id})))
@@ -60,11 +59,10 @@ pub fn create_classroom(key: ApiKey, new_class: Json<NewClassroom>, connection: 
 
 #[post("/<class_id>", rank = 2)]
 pub fn join(key: ApiKey, class_id: String, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
-
     let codes = get_class_codes(&connection).unwrap();
 
     if !codes.contains(&class_id) {
-        return Err(Status::NotFound)
+        return Err(Status::NotFound);
     }
 
     if let Ok(r) = User::get_role(&key.0, &connection) {
@@ -85,15 +83,13 @@ pub fn join(key: ApiKey, class_id: String, connection: db::DbConn) -> Result<Jso
                     .map_err(|_| Status::BadRequest)
             }
         }
-    }
-    else {
+    } else {
         Err(Status::BadRequest)
     }
 }
 
 #[get("/", rank = 1)]
 fn classrooms(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
-
     let user = users::table.find(&key.0).get_result::<User>(&*connection);
     match Role::from_str(user.as_ref().unwrap().status.as_str()).unwrap() {
         Role::Student => {
@@ -112,7 +108,7 @@ fn classrooms(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, St
             }
 
             Ok(Json(json!({"class_id":c})))
-        },
+        }
         Role::Teacher => {
             let teacher = teachers
                 .filter(teacher_id

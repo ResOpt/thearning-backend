@@ -58,6 +58,5 @@ impl Assignments {
             .execute(connection)?;
 
         assignments::table.order(assignments::assignment_id.desc()).first(connection)
-
     }
 }

@@ -101,8 +101,8 @@ impl User {
 
     pub fn get_by_key(key_: &String, password_: String, connection: &PgConnection) -> Option<Self> {
         let res = users::table
-                .filter(users::user_id.eq(key_))
-                .get_result::<Self>(connection);
+            .filter(users::user_id.eq(key_))
+            .get_result::<Self>(connection);
 
         match res {
             Ok(user) => {

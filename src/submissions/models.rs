@@ -20,6 +20,4 @@ pub struct Submissions {
     pub submission_file: Option<String>,
 }
 
-pub struct FillableSubmissions {
-    
-}
+pub struct FillableSubmissions {}
