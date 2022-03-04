@@ -1,3 +1,7 @@
+#![allow(dead_code)]
+#![allow(unused_mut)]
+#![allow(unused)]
+
 #[macro_use]
 extern crate diesel;
 #[macro_use]

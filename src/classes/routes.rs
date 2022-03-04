@@ -35,13 +35,8 @@ pub fn create_classroom(key: ApiKey, new_class: Json<NewClassroom>, connection: 
             Role::Teacher => {
                 match Classroom::create(new_class.into_inner(), &connection) {
                     Ok(id) => {
-                        if is_email(&key.0) {
-                            if let Ok(v) = User::get_id_from_email(&key.0, &connection) {
-                                Teacher::create(&v, &id.class_id, &connection).unwrap();
-                            }
-                        } else {
-                            Teacher::create(&key.0, &id.class_id, &connection).unwrap();
-                        }
+
+                        Teacher::create(&key.0, &id.class_id, &connection).unwrap();
 
                         Ok(Json(json!({ "success": true, "class_id":  &id.class_id})))
                     }

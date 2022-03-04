@@ -55,7 +55,7 @@ pub struct User {
     pub status: String,
 }
 
-#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable)]
+#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable, Debug)]
 #[belongs_to(User)]
 #[table_name = "students"]
 pub struct Student {
@@ -150,41 +150,42 @@ impl User {
 
 impl Student {
     pub fn create(uid: &String, class_id: &String, connection: &PgConnection) -> QueryResult<Self> {
-        let x = Self {
+        let new_student = Self {
             id: generate_random_id(),
             user_id: uid.to_string(),
             class_id: class_id.to_string(),
         };
         diesel::insert_into(students::table)
-            .values(&x)
+            .values(&new_student)
             .execute(connection)?;
-        students::table.order(students::user_id.desc()).first(connection)
+        students::table.filter(students::user_id.eq(new_student.user_id)).get_result::<Self>(connection)
     }
 }
 
 impl Teacher {
     pub fn create(uid: &String, class_id: &String, connection: &PgConnection) -> QueryResult<Self> {
-        let x = Self {
+        let new_teacher = Self {
             id: generate_random_id(),
             user_id: uid.to_string(),
             class_id: class_id.to_string(),
         };
         diesel::insert_into(teachers::table)
-            .values(&x)
+            .values(&new_teacher)
             .execute(connection)?;
-        teachers::table.order(teachers::user_id.desc()).first(connection)
+        teachers::table.filter(teachers::user_id.eq(new_teacher.user_id)).get_result::<Self>(connection)
     }
 }
+
 impl Admin {
     pub fn create(uid: &String, class_id: &String, connection: &PgConnection) -> QueryResult<Self> {
-        let x = Self {
+        let new_admin = Self {
             id: generate_random_id(),
             user_id: uid.to_string(),
             class_id: class_id.to_string(),
         };
         diesel::insert_into(admins::table)
-            .values(&x)
+            .values(&new_admin)
             .execute(connection)?;
-        teachers::table.order(teachers::user_id.desc()).first(connection)
+        admins::table.filter(admins::user_id.eq(new_admin.user_id)).get_result::<Self>(connection)
     }
 }

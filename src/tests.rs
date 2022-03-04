@@ -13,14 +13,24 @@ mod tests {
 
     use rustc_serialize::json::ToJson;
     use rustc_serialize::json::Json as EnumJson;
-    use crate::classes::models::Classroom;
+    use crate::auth::read_token;
 
     use crate::rocket;
-    use crate::schema::users::status;
-    use crate::schema::users::dsl::*;
+
     use crate::db::{self, database_url};
-    use crate::schema::classes::dsl::classes;
-    use crate::schema::teachers::dsl::teachers;
+
+    use crate::users::models::Student;
+    use crate::classes::models::Classroom;
+
+
+    use crate::schema::users;
+    use crate::schema::users::dsl::users as users_object;
+    use crate::schema::classes;
+    use crate::schema::classes::dsl::classes as classes_object;
+    use crate::schema::teachers::dsl::teachers as teachers_object;
+    use crate::schema::teachers;
+    use crate::schema::students::dsl::students as students_object;
+    use crate::schema::students;
 
     #[derive(Deserialize)]
     struct Task {
@@ -177,32 +187,62 @@ mod tests {
     }
 
     #[test]
-    fn t_5_delete_user() {
+    fn t_5_join_classroom() {
+
+        let db_conn = PgConnection::establish(&database_url()).unwrap();
+
+        // Getting auth token
+        let token = auth_request().0.token;
+
+        // Loading classes
+        let _classes = classes::table.load::<Classroom>(&db_conn).unwrap();
+
+        // Loading a classroom and getting its id
+        let class = _classes.first().unwrap();
+        let class_id = &class.class_id;
+
+        // Reading the auth token
+        let user_id = read_token(&token).unwrap();
+
+        // Creating student
+        let create_student = Student::create(&user_id, class_id, &db_conn);
+
+        // Is the student creation success?
+        assert!(create_student.is_ok());
+    }
+
+    #[test]
+    fn t_6_delete_user() {
 
         // Database connection
         let db_conn = PgConnection::establish(&database_url()).unwrap();
 
+        // Deleting all students in the table
+        let delete_all_students = diesel::delete(students_object)
+            .execute(&db_conn);
+
         // Deleting all teachers in the table
-        let delete_all_teachers = diesel::delete(teachers)
+        let delete_all_teachers = diesel::delete(teachers_object)
             .execute(&db_conn);
 
         // Deleting all classes in the table
-        let delete_all_classes = diesel::delete(classes)
+        let delete_all_classes = diesel::delete(classes_object)
             .execute(&db_conn);
 
         // Deleting the dummy users
-        let deleted_rows = diesel::delete(users
-            .filter(user_id.eq("123")))
+        let delete_dummy_1 = diesel::delete(users_object
+            .filter(users::user_id.eq("123")))
             .execute(&db_conn);
 
-        let deleted_rows_2 = diesel::delete(users
-            .filter(user_id.eq("234")))
+        let delete_dummy_2 = diesel::delete(users_object
+            .filter(users::user_id.eq("234")))
             .execute(&db_conn);
 
         // Are the rows deleted?
+        assert_eq!(Ok(1), delete_all_students);
         assert_eq!(Ok(1), delete_all_teachers);
         assert_eq!(Ok(1), delete_all_classes);
-        assert_eq!(Ok(1), deleted_rows);
-        assert_eq!(Ok(1), deleted_rows_2);
+        assert_eq!(Ok(1), delete_dummy_1);
+        assert_eq!(Ok(1), delete_dummy_2);
     }
 }
