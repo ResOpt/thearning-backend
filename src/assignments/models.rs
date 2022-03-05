@@ -31,22 +31,21 @@ pub struct FillableAssignments {
 }
 
 impl Assignments {
-    pub fn create(assignment_data: FillableAssignments, connection: &PgConnection) -> QueryResult<Self> {
+    pub fn create(
+        assignment_data: FillableAssignments,
+        connection: &PgConnection,
+    ) -> QueryResult<Self> {
         let assignments = Self {
             assignment_id: generate_random_id(&get_ids(connection).unwrap()),
             assignment_name: assignment_data.assignment_name,
             class_id: assignment_data.class_id,
             due_date: match assignment_data.due_date {
-                Some(v) => {
-                    Some(NaiveDate::from(v))
-                }
-                None => None
+                Some(v) => Some(NaiveDate::from(v)),
+                None => None,
             },
             due_time: match assignment_data.due_time {
-                Some(v) => {
-                    Some(NaiveTime::from(v))
-                }
-                None => None
+                Some(v) => Some(NaiveTime::from(v)),
+                None => None,
             },
             posted_date: NaiveDate::from(chrono::offset::Local::now().date().naive_local()),
             instructions: assignment_data.instructions,
@@ -57,6 +56,8 @@ impl Assignments {
             .values(&assignments)
             .execute(connection)?;
 
-        assignments::table.order(assignments::assignment_id.desc()).first(connection)
+        assignments::table
+            .order(assignments::assignment_id.desc())
+            .first(connection)
     }
 }

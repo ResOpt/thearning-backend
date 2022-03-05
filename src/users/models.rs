@@ -1,7 +1,7 @@
 use std::fmt;
 use std::path::Path;
 
-use bcrypt::{DEFAULT_COST, hash, verify};
+use bcrypt::{hash, verify, DEFAULT_COST};
 use diesel;
 use diesel::associations::BelongsTo;
 use diesel::pg::PgConnection;
@@ -55,7 +55,9 @@ pub struct User {
     pub status: String,
 }
 
-#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable, Debug)]
+#[derive(
+    Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable, Debug,
+)]
 #[belongs_to(User)]
 #[table_name = "students"]
 pub struct Student {
@@ -64,7 +66,9 @@ pub struct Student {
     pub class_id: String,
 }
 
-#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable)]
+#[derive(
+    Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable,
+)]
 #[belongs_to(User)]
 #[table_name = "teachers"]
 pub struct Teacher {
@@ -73,7 +77,9 @@ pub struct Teacher {
     pub class_id: String,
 }
 
-#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable)]
+#[derive(
+    Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable,
+)]
 #[belongs_to(User)]
 #[table_name = "admins"]
 pub struct Admin {
@@ -92,7 +98,9 @@ impl User {
             .values(&hashed)
             .execute(connection)?;
 
-        users::table.find(hashed.user_id).get_result::<Self>(connection)
+        users::table
+            .find(hashed.user_id)
+            .get_result::<Self>(connection)
     }
 
     pub fn find_user(uid: &String, connection: &PgConnection) -> QueryResult<Self> {
@@ -113,23 +121,15 @@ impl User {
                 }
                 return None;
             }
-            Err(_) => {
-                None
-            }
+            Err(_) => None,
         }
     }
 
     pub fn get_role(key_: &String, connection: &PgConnection) -> Result<Role, String> {
-        let res;
-        if is_email(key_) {
-            res = users::table
-                .filter(users::email.eq(key_))
-                .get_result::<Self>(connection);
-        } else {
-            res = users::table
-                .filter(users::user_id.eq(key_))
-                .get_result::<Self>(connection);
-        }
+        let res = users::table
+            .filter(users::user_id.eq(key_))
+            .get_result::<Self>(connection);
+
         match res {
             Ok(user) => Role::from_str(&user.status),
             Err(e) => Err("User does not exist".to_string()),
@@ -149,15 +149,19 @@ impl User {
 }
 
 pub trait ClassUser {
-    fn create(uid: &String, class_id: &String, connection: &PgConnection)
-        -> QueryResult<Self>
-        where Self: Sized;
+    fn create(uid: &String, class_id: &String, connection: &PgConnection) -> QueryResult<Self>
+    where
+        Self: Sized;
 }
 
 macro_rules! impl_classuser {
     ($u:ident, $d:ident) => {
         impl ClassUser for $u {
-            fn create(uid: &String, class_id: &String, connection: &PgConnection) -> QueryResult<Self> {
+            fn create(
+                uid: &String,
+                class_id: &String,
+                connection: &PgConnection,
+            ) -> QueryResult<Self> {
                 let u = Self {
                     id: generate_random_id(),
                     user_id: uid.to_string(),
@@ -167,12 +171,14 @@ macro_rules! impl_classuser {
                     .values(&u)
                     .execute(connection)?;
 
-                $d::table.filter($d::user_id.eq(u.user_id)).get_result::<Self>(connection)
+                $d::table
+                    .filter($d::user_id.eq(u.user_id))
+                    .get_result::<Self>(connection)
             }
         }
-    }
+    };
 }
 
-impl_classuser!{Student, students}
-impl_classuser!{Teacher, teachers}
-impl_classuser!{Admin, admins}
+impl_classuser! {Student, students}
+impl_classuser! {Teacher, teachers}
+impl_classuser! {Admin, admins}

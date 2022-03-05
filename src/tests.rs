@@ -6,9 +6,9 @@ mod tests {
 
     use rocket::http::{ContentType, Header, Status};
     use rocket::local::blocking::Client;
-    use rocket::serde::Deserialize;
-    use rocket::serde::json::Json;
     use rocket::serde::json::serde_json::json;
+    use rocket::serde::json::Json;
+    use rocket::serde::Deserialize;
     use rustc_serialize::json::Json as EnumJson;
     use rustc_serialize::json::ToJson;
 
@@ -24,7 +24,7 @@ mod tests {
     use crate::schema::teachers::dsl::teachers as teachers_object;
     use crate::schema::users;
     use crate::schema::users::dsl::users as users_object;
-    use crate::users::models::{Student, ClassUser};
+    use crate::users::models::{ClassUser, Student};
 
     use self::diesel::prelude::*;
 
@@ -61,20 +61,26 @@ mod tests {
     }
 
     fn auth_request() -> (Task, Task) {
-
         // Construct the client
         let client = client();
 
         // Authenticating the dummy users
-        let mut response_auth = client.post("/api/auth")
+        let mut response_auth = client
+            .post("/api/auth")
             .header(ContentType::JSON)
-            .body(r#"{"key":"123", "password":"dummy"}"#).dispatch();
+            .body(r#"{"key":"123", "password":"dummy"}"#)
+            .dispatch();
 
-        let mut response_auth_2 = client.post("/api/auth")
+        let mut response_auth_2 = client
+            .post("/api/auth")
             .header(ContentType::JSON)
-            .body(r#"{"key":"234", "password":"dummy"}"#).dispatch();
+            .body(r#"{"key":"234", "password":"dummy"}"#)
+            .dispatch();
 
-        (response_auth.into_json::<Task>().unwrap(), response_auth_2.into_json::<Task>().unwrap())
+        (
+            response_auth.into_json::<Task>().unwrap(),
+            response_auth_2.into_json::<Task>().unwrap(),
+        )
     }
 
     #[test]
@@ -105,13 +111,17 @@ mod tests {
         let client = client();
 
         // Creating the dummy users
-        let response_create = client.post("/api/user")
+        let response_create = client
+            .post("/api/user")
             .header(ContentType::JSON)
-            .body(string).dispatch();
+            .body(string)
+            .dispatch();
 
-        let response_create_2 = client.post("/api/user")
+        let response_create_2 = client
+            .post("/api/user")
             .header(ContentType::JSON)
-            .body(string_2).dispatch();
+            .body(string_2)
+            .dispatch();
 
         // Is Response ok?
         assert_eq!(response_create.status(), Status::Ok);
@@ -120,7 +130,6 @@ mod tests {
 
     #[test]
     fn t_2_auth() {
-
         // Getting the auth response
         let r = auth_request();
 
@@ -131,7 +140,6 @@ mod tests {
 
     #[test]
     fn t_3_get_data() {
-
         // Construct the client
         let client = client();
 
@@ -139,11 +147,13 @@ mod tests {
         let r = auth_request();
 
         // Sending GET method to get data with token authentication
-        let mut response_data = client.get("/api/user")
+        let mut response_data = client
+            .get("/api/user")
             .header(Header::new("Authentication", r.0.token))
             .dispatch();
 
-        let mut response_data_2 = client.get("/api/user")
+        let mut response_data_2 = client
+            .get("/api/user")
             .header(Header::new("Authentication", r.1.token))
             .dispatch();
 
@@ -170,10 +180,12 @@ mod tests {
         let r = auth_request();
 
         // Sending POST method to create a classroom
-        let mut response_classroom = client.post("/api/classroom")
+        let mut response_classroom = client
+            .post("/api/classroom")
             .header(Header::new("Authentication", r.1.token))
             .header(ContentType::JSON)
-            .body(string).dispatch();
+            .body(string)
+            .dispatch();
 
         // Deserializing Classroom reponse
         let r = response_classroom.into_json::<Task2>().unwrap();
@@ -208,30 +220,24 @@ mod tests {
 
     #[test]
     fn t_6_delete_user() {
-
         // Database connection
         let db_conn = PgConnection::establish(&database_url()).unwrap();
 
         // Deleting all students in the table
-        let delete_all_students = diesel::delete(students_object)
-            .execute(&db_conn);
+        let delete_all_students = diesel::delete(students_object).execute(&db_conn);
 
         // Deleting all teachers in the table
-        let delete_all_teachers = diesel::delete(teachers_object)
-            .execute(&db_conn);
+        let delete_all_teachers = diesel::delete(teachers_object).execute(&db_conn);
 
         // Deleting all classes in the table
-        let delete_all_classes = diesel::delete(classes_object)
-            .execute(&db_conn);
+        let delete_all_classes = diesel::delete(classes_object).execute(&db_conn);
 
         // Deleting the dummy users
-        let delete_dummy_1 = diesel::delete(users_object
-            .filter(users::user_id.eq("123")))
-            .execute(&db_conn);
+        let delete_dummy_1 =
+            diesel::delete(users_object.filter(users::user_id.eq("123"))).execute(&db_conn);
 
-        let delete_dummy_2 = diesel::delete(users_object
-            .filter(users::user_id.eq("234")))
-            .execute(&db_conn);
+        let delete_dummy_2 =
+            diesel::delete(users_object.filter(users::user_id.eq("234"))).execute(&db_conn);
 
         // Are the rows deleted?
         assert_eq!(Ok(1), delete_all_students);

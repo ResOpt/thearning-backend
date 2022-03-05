@@ -1,15 +1,17 @@
-use diesel::Connection;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use diesel::query_dsl::QueryDsl;
 use diesel::result::Error;
-use rand::{Rng, thread_rng};
+use diesel::Connection;
 use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
 
 use crate::schema::{assignments, classes};
 
 pub fn get_ids(connection: &PgConnection) -> Result<Vec<String>, Error> {
-    assignments::table.select(assignments::assignment_id).load::<String>(connection)
+    assignments::table
+        .select(assignments::assignment_id)
+        .load::<String>(connection)
 }
 
 pub fn generate_random_id(existing_codes: &Vec<String>) -> String {

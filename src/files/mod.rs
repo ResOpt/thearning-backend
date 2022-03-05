@@ -1,2 +1,2 @@
-mod routes;
 mod models;
+mod routes;

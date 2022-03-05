@@ -1,6 +1,6 @@
 use chrono::{Local, Utc};
 use diesel::{Connection, PgConnection};
-use jsonwebtoken::{Algorithm, decode, DecodingKey, encode, EncodingKey, Header, Validation};
+use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use rocket::http::Status;
 use rocket::request::{self, FromRequest, Request};
 use serde::{Deserialize, Serialize};
@@ -30,13 +30,13 @@ pub fn generate_token(key: &String, role: &Role) -> Result<String, Errors> {
     let mut sub = key.clone();
     let db_conn = match PgConnection::establish(&database_url()) {
         Ok(c) => c,
-        Err(_) => return Err(Errors::FailedToCreateJWT)
+        Err(_) => return Err(Errors::FailedToCreateJWT),
     };
 
     if is_email(key) {
         sub = match User::get_id_from_email(key, &db_conn) {
             Ok(ok) => ok,
-            Err(_) => return Err(Errors::FailedToCreateJWT)
+            Err(_) => return Err(Errors::FailedToCreateJWT),
         };
     }
 
@@ -55,17 +55,18 @@ pub fn generate_token(key: &String, role: &Role) -> Result<String, Errors> {
 pub fn read_token(key: &str) -> Result<String, Errors> {
     let now = (Local::now().timestamp_nanos() / 1_000_000_00) as usize;
 
-    match decode::<Claims>
-        (key,
-         &DecodingKey::from_secret(SECRET.as_ref()),
-         &Validation::new(Algorithm::HS512)) {
+    match decode::<Claims>(
+        key,
+        &DecodingKey::from_secret(SECRET.as_ref()),
+        &Validation::new(Algorithm::HS512),
+    ) {
         Ok(v) => {
             if v.claims.exp < now {
                 return Err(Errors::TokenExpired);
             }
             Ok(v.claims.sub)
         }
-        Err(_) => Err(Errors::TokenInvalid)
+        Err(_) => Err(Errors::TokenInvalid),
     }
 }
 
@@ -80,7 +81,7 @@ impl<'r> FromRequest<'r> for ApiKey {
         }
         match read_token(keys[0]) {
             Ok(claim) => request::Outcome::Success(ApiKey(claim)),
-            Err(e) => request::Outcome::Failure((Status::Unauthorized, e))
+            Err(e) => request::Outcome::Failure((Status::Unauthorized, e)),
         }
     }
 }

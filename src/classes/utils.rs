@@ -1,15 +1,17 @@
-use diesel::Connection;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use diesel::query_dsl::QueryDsl;
 use diesel::result::Error;
-use rand::{Rng, thread_rng};
+use diesel::Connection;
 use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
 
 use crate::schema::classes;
 
 pub fn get_class_codes(connection: &PgConnection) -> Result<Vec<String>, Error> {
-    classes::table.select(classes::class_id).load::<String>(connection)
+    classes::table
+        .select(classes::class_id)
+        .load::<String>(connection)
 }
 
 pub fn generate_class_code(existing_codes: &Vec<String>) -> String {

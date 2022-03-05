@@ -5,10 +5,10 @@ use diesel::pg::PgConnection;
 use diesel::r2d2::ConnectionManager;
 use dotenv::dotenv;
 use r2d2;
-use rocket::{Request, State};
 use rocket::http::Status;
 use rocket::outcome::try_outcome;
 use rocket::request::{self, FromRequest};
+use rocket::{Request, State};
 
 type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 

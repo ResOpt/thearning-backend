@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use bcrypt::{DEFAULT_COST, hash, verify};
+use bcrypt::{hash, verify, DEFAULT_COST};
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
@@ -37,6 +37,8 @@ impl Classroom {
             .values(&new_class)
             .execute(connection)?;
 
-        classes::table.find(new_class.class_id).get_result::<Self>(connection)
+        classes::table
+            .find(new_class.class_id)
+            .get_result::<Self>(connection)
     }
 }
