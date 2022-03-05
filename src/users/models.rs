@@ -148,44 +148,31 @@ impl User {
     }
 }
 
-impl Student {
-    pub fn create(uid: &String, class_id: &String, connection: &PgConnection) -> QueryResult<Self> {
-        let new_student = Self {
-            id: generate_random_id(),
-            user_id: uid.to_string(),
-            class_id: class_id.to_string(),
-        };
-        diesel::insert_into(students::table)
-            .values(&new_student)
-            .execute(connection)?;
-        students::table.filter(students::user_id.eq(new_student.user_id)).get_result::<Self>(connection)
+pub trait ClassUser {
+    fn create(uid: &String, class_id: &String, connection: &PgConnection)
+        -> QueryResult<Self>
+        where Self: Sized;
+}
+
+macro_rules! impl_classuser {
+    ($u:ident, $d:ident) => {
+        impl ClassUser for $u {
+            fn create(uid: &String, class_id: &String, connection: &PgConnection) -> QueryResult<Self> {
+                let u = Self {
+                    id: generate_random_id(),
+                    user_id: uid.to_string(),
+                    class_id: class_id.to_string(),
+                };
+                diesel::insert_into($d::table)
+                    .values(&u)
+                    .execute(connection)?;
+
+                $d::table.filter($d::user_id.eq(u.user_id)).get_result::<Self>(connection)
+            }
+        }
     }
 }
 
-impl Teacher {
-    pub fn create(uid: &String, class_id: &String, connection: &PgConnection) -> QueryResult<Self> {
-        let new_teacher = Self {
-            id: generate_random_id(),
-            user_id: uid.to_string(),
-            class_id: class_id.to_string(),
-        };
-        diesel::insert_into(teachers::table)
-            .values(&new_teacher)
-            .execute(connection)?;
-        teachers::table.filter(teachers::user_id.eq(new_teacher.user_id)).get_result::<Self>(connection)
-    }
-}
-
-impl Admin {
-    pub fn create(uid: &String, class_id: &String, connection: &PgConnection) -> QueryResult<Self> {
-        let new_admin = Self {
-            id: generate_random_id(),
-            user_id: uid.to_string(),
-            class_id: class_id.to_string(),
-        };
-        diesel::insert_into(admins::table)
-            .values(&new_admin)
-            .execute(connection)?;
-        admins::table.filter(admins::user_id.eq(new_admin.user_id)).get_result::<Self>(connection)
-    }
-}
+impl_classuser!{Student, students}
+impl_classuser!{Teacher, teachers}
+impl_classuser!{Admin, admins}

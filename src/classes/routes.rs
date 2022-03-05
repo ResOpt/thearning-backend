@@ -22,7 +22,7 @@ use crate::schema::students::user_id as student_id;
 use crate::schema::teachers::dsl::teachers;
 use crate::schema::teachers::user_id as teacher_id;
 use crate::schema::users;
-use crate::users::models::{Admin, Role, Student, Teacher, User};
+use crate::users::models::{Admin, Role, Student, Teacher, User, ClassUser};
 use crate::users::utils::is_email;
 
 #[post("/", data = "<new_class>", rank = 1)]
