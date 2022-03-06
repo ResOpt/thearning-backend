@@ -24,6 +24,7 @@ table! {
         attachment_id -> Varchar,
         file_id -> Varchar,
         assignment_id -> Varchar,
+        uploader -> Varchar,
     }
 }
 
@@ -89,6 +90,7 @@ joinable!(admins -> users (user_id));
 joinable!(assignments -> classes (class_id));
 joinable!(attachments -> assignments (assignment_id));
 joinable!(attachments -> files (file_id));
+joinable!(attachments -> users (uploader));
 joinable!(students -> classes (class_id));
 joinable!(students -> users (user_id));
 joinable!(submissions -> assignments (assignment_id));

@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::assignments::models::{Assignments, FillableAssignments};
 use crate::auth::ApiKey;
 use crate::db;
+use crate::db::DbConn;
 
 #[post("/create", data = "<data>")]
 fn create(
@@ -24,6 +25,11 @@ fn create(
     }
 }
 
+#[get("/<assignment_id>", rank = 2)]
+fn assignment(key: ApiKey, assignment_id: String, conn: DbConn) -> Result<Json<JsonValue>, Status> {
+    unimplemented!()
+}
+
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
-    rocket.mount("/assignments", routes![create])
+    rocket.mount("/api/classroom/assignments", routes![create])
 }

@@ -144,13 +144,6 @@ fn classrooms(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, St
 
 #[get("/<class_id>", rank = 2)]
 fn class(key: ApiKey, class_id: String, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
-    let mut key_ = key.0.clone();
-    if is_email(&key.0) {
-        key_ = match User::get_id_from_email(&key.0, &connection) {
-            Ok(v) => v,
-            Err(e) => return Err(Status::BadRequest),
-        }
-    }
     unimplemented!()
 }
 

@@ -25,6 +25,7 @@ mod tests {
     use crate::schema::users;
     use crate::schema::users::dsl::users as users_object;
     use crate::users::models::{ClassUser, Student};
+    use crate::utils::generate_random_id;
 
     use self::diesel::prelude::*;
 

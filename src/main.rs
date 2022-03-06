@@ -21,6 +21,7 @@ mod classes;
 mod users;
 
 mod assignments;
+mod attachments;
 pub mod auth;
 pub mod db;
 mod errors;

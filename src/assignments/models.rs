@@ -4,8 +4,10 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::assignments::utils::{generate_random_id, get_ids};
+use crate::assignments::utils::get_ids;
 use crate::schema::assignments;
+
+use crate::utils::generate_random_id;
 
 #[derive(Serialize, Deserialize, Queryable, Insertable)]
 #[table_name = "assignments"]
@@ -36,7 +38,7 @@ impl Assignments {
         connection: &PgConnection,
     ) -> QueryResult<Self> {
         let assignments = Self {
-            assignment_id: generate_random_id(&get_ids(connection).unwrap()),
+            assignment_id: generate_random_id().to_string(),
             assignment_name: assignment_data.assignment_name,
             class_id: assignment_data.class_id,
             due_date: match assignment_data.due_date {

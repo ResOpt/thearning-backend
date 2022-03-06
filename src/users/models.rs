@@ -15,6 +15,7 @@ use crate::schema::students;
 use crate::schema::teachers;
 use crate::schema::users;
 use crate::users::utils::*;
+use crate::utils::generate_random_id;
 
 pub enum Role {
     Student,
