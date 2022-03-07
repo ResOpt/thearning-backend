@@ -1,11 +1,11 @@
-use chrono::{Local, Utc};
+use chrono::Local;
 use diesel::{Connection, PgConnection};
-use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken::{Algorithm, decode, DecodingKey, encode, EncodingKey, Header, Validation};
 use rocket::http::Status;
 use rocket::request::{self, FromRequest, Request};
 use serde::{Deserialize, Serialize};
 
-use crate::db::{self, database_url};
+use crate::db::database_url;
 use crate::errors::Errors;
 use crate::users::models::{Role, User};
 use crate::users::utils::is_email;

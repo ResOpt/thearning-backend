@@ -1,10 +1,7 @@
-use chrono::{Date, NaiveDate, NaiveTime};
-use diesel;
-use diesel::pg::PgConnection;
+use chrono::{NaiveDate, NaiveTime};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::classes::models::Classroom;
 use crate::schema::submissions;
 
 #[derive(Serialize, Deserialize, Queryable, Insertable)]

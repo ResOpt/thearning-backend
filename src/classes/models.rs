@@ -1,6 +1,3 @@
-use std::path::Path;
-
-use bcrypt::{hash, verify, DEFAULT_COST};
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;

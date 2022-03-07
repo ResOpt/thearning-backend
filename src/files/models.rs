@@ -3,9 +3,6 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::db;
-use crate::db::DbConn;
-use crate::files::utils::get_file_ids;
 use crate::schema::files;
 use crate::utils::generate_random_id;
 

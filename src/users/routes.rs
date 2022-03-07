@@ -1,14 +1,12 @@
-use chrono::format::Item::Error;
 use jsonwebtoken::{Algorithm, Header};
 use rocket::http::Status;
-use rocket::serde::json::serde_json::json;
 use rocket::serde::json::Json;
+use rocket::serde::json::serde_json::json;
 use rocket_dyn_templates::handlebars::JsonValue;
 use serde::{Deserialize, Serialize};
 
-use crate::auth::{generate_token, ApiKey, Claims};
+use crate::auth::{ApiKey, generate_token};
 use crate::db;
-use crate::errors::Errors;
 use crate::users::models::{Role, User};
 
 #[post("/", data = "<user>")]

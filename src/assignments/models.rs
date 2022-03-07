@@ -4,9 +4,7 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::assignments::utils::get_ids;
 use crate::schema::assignments;
-
 use crate::utils::generate_random_id;
 
 #[derive(Serialize, Deserialize, Queryable, Insertable)]

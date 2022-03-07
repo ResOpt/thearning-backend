@@ -9,8 +9,7 @@ extern crate rocket;
 extern crate rocket_cors;
 
 use rocket::http::Method;
-use rocket::response::content::Json;
-use rocket_cors::{AllowedHeaders, AllowedOrigins, Cors, CorsOptions, Error};
+use rocket_cors::{AllowedHeaders, AllowedOrigins, Cors, CorsOptions};
 
 use assignments::routes as assignment_routes;
 use classes::routes as class_routes;

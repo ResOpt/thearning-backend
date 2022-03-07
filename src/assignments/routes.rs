@@ -1,8 +1,7 @@
 use rocket::http::Status;
-use rocket::serde::json::serde_json::json;
 use rocket::serde::json::Json;
+use rocket::serde::json::serde_json::json;
 use rocket_dyn_templates::handlebars::JsonValue;
-use serde::{Deserialize, Serialize};
 
 use crate::assignments::models::{Assignments, FillableAssignments};
 use crate::auth::ApiKey;

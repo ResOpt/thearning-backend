@@ -1,11 +1,10 @@
+use diesel::{QueryDsl, RunQueryDsl};
 use diesel::prelude::*;
-use diesel::{EqAll, QueryDsl, RunQueryDsl};
-use rocket::http::Status;
-use rocket::serde::json::serde_json::json;
-use rocket::serde::json::Json;
 use rocket::{self, routes};
+use rocket::http::Status;
+use rocket::serde::json::Json;
+use rocket::serde::json::serde_json::json;
 use rocket_dyn_templates::handlebars::JsonValue;
-use serde::{Deserialize, Serialize};
 
 use crate::auth::ApiKey;
 use crate::classes::models::{Classroom, NewClassroom};
@@ -14,8 +13,6 @@ use crate::db;
 use crate::db::DbConn;
 use crate::schema::admins::dsl::admins;
 use crate::schema::admins::user_id as admin_id;
-use crate::schema::assignments::dsl::assignments;
-use crate::schema::classes;
 use crate::schema::classes::dsl::classes as class_q;
 use crate::schema::students::dsl::students;
 use crate::schema::students::user_id as student_id;
@@ -23,7 +20,6 @@ use crate::schema::teachers::dsl::teachers;
 use crate::schema::teachers::user_id as teacher_id;
 use crate::schema::users;
 use crate::users::models::{Admin, ClassUser, Role, Student, Teacher, User};
-use crate::users::utils::is_email;
 
 #[post("/", data = "<new_class>", rank = 1)]
 pub fn create_classroom(
@@ -55,6 +51,16 @@ pub fn create_classroom(
 //#[derive(Serialize, Deserialize)]
 //pub struct ClassCode(pub String);
 
+fn create_classuser<T: ClassUser>(
+    key: &String,
+    class_id: &String,
+    conn: &DbConn,
+) -> Result<Json<JsonValue>, Status> {
+    T::create(key, class_id, conn)
+        .map(|_| Json(json!({"status":200 as i32})))
+        .map_err(|_| Status::BadRequest)
+}
+
 #[post("/<class_id>", rank = 2)]
 pub fn join(
     key: ApiKey,
@@ -69,15 +75,9 @@ pub fn join(
 
     if let Ok(r) = User::get_role(&key.0, &connection) {
         match r {
-            Role::Student => Student::create(&key.0, &class_id, &connection)
-                .map(|_| Json(json!({"success":true, "role":"student"})))
-                .map_err(|_| Status::BadRequest),
-            Role::Teacher => Teacher::create(&key.0, &class_id, &connection)
-                .map(|_| Json(json!({"success":true, "role":"teacher"})))
-                .map_err(|_| Status::BadRequest),
-            Role::Admin => Admin::create(&key.0, &class_id, &connection)
-                .map(|_| Json(json!({"success":true, "role":"admin"})))
-                .map_err(|_| Status::BadRequest),
+            Role::Student => create_classuser::<Student>(&key.0, &class_id, &connection),
+            Role::Teacher => create_classuser::<Teacher>(&key.0, &class_id, &connection),
+            Role::Admin => create_classuser::<Admin>(&key.0, &class_id, &connection),
         }
     } else {
         Err(Status::BadRequest)

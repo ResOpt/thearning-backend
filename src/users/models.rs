@@ -1,20 +1,15 @@
 use std::fmt;
-use std::path::Path;
 
-use bcrypt::{hash, verify, DEFAULT_COST};
+use bcrypt::{DEFAULT_COST, hash, verify};
 use diesel;
-use diesel::associations::BelongsTo;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::classes::models::*;
-use crate::db;
 use crate::schema::admins;
 use crate::schema::students;
 use crate::schema::teachers;
 use crate::schema::users;
-use crate::users::utils::*;
 use crate::utils::generate_random_id;
 
 pub enum Role {
