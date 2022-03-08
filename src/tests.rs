@@ -2,6 +2,7 @@
 mod tests {
     extern crate diesel;
 
+    use chrono::NaiveDate;
     use rocket::http::{ContentType, Header, Status};
     use rocket::local::blocking::Client;
     use rocket::serde::Deserialize;
@@ -16,21 +17,34 @@ mod tests {
     use crate::schema::teachers::dsl::teachers as teachers_object;
     use crate::schema::users;
     use crate::schema::users::dsl::users as users_object;
+    use crate::schema::assignments;
+    use crate::schema::assignments::dsl::assignments as assignment_object;
     use crate::users::models::{ClassUser, Student};
 
     use self::diesel::prelude::*;
 
     #[derive(Deserialize)]
-    struct Task {
+    struct Auth {
         status: i32,
         token: String,
     }
 
     #[derive(Deserialize)]
-    struct Task2 {
+    struct ClassId {
         class_id: String,
         success: bool,
     }
+
+    #[derive(Deserialize)]
+    struct ClassIds {
+        class_id: Vec<Classroom>,
+    }
+
+    #[derive(Deserialize)]
+    struct SuccessOrNot {
+        success: bool,
+    }
+
 
     #[derive(Deserialize)]
     struct UserData {
@@ -52,7 +66,7 @@ mod tests {
         Client::tracked(rocket()).expect("valid rocket instance")
     }
 
-    fn auth_request() -> (Task, Task) {
+    fn auth_request() -> (Auth, Auth) {
         // Construct the client
         let client = client();
 
@@ -70,8 +84,8 @@ mod tests {
             .dispatch();
 
         (
-            response_auth.into_json::<Task>().unwrap(),
-            response_auth_2.into_json::<Task>().unwrap(),
+            response_auth.into_json::<Auth>().unwrap(),
+            response_auth_2.into_json::<Auth>().unwrap(),
         )
     }
 
@@ -180,7 +194,7 @@ mod tests {
             .dispatch();
 
         // Deserializing Classroom reponse
-        let r = response_classroom.into_json::<Task2>().unwrap();
+        let r = response_classroom.into_json::<ClassId>().unwrap();
 
         // Is it success?
         assert_eq!(r.success, true);
@@ -211,9 +225,58 @@ mod tests {
     }
 
     #[test]
-    fn t_6_delete_user() {
+    fn t_6_create_assignment() {
+
+        let client = client();
+
+        let token = auth_request().1.token;
+
+        // Sending get request to get classrooms the user attends
+        let response_1 = client
+            .get("/api/classroom")
+            .header(Header::new("Authentication", token.clone()))
+            .dispatch();
+
+        // Deserialize it into a struct
+        let r = response_1.into_json::<ClassIds>().unwrap();
+
+        let classrooms = r.class_id;
+
+        // Getting a sample class id
+        let sample_class = classrooms.first().unwrap();
+
+        // Data
+        let string = format!(r#"{{"assignment": {{"assignment_name": "Dummy Assignment",
+                                                       "class_id": "{}",
+                                                       "due_date": null,
+                                                       "due_time": null,
+                                                       "instructions": "Do this and that"
+                                                     }},
+                                         "files": null
+                                  }}"#, sample_class.class_id);
+
+        // Sending post request to create a new assignment
+        let response_2 = client
+            .post("/api/classroom/assignments/create")
+            .header(ContentType::JSON)
+            .header(Header::new("Authentication", token.clone()))
+            .body(string)
+            .dispatch();
+
+        // Deserializing the response
+        let r_2 = response_2.into_json::<SuccessOrNot>().unwrap();
+
+        // Was the operation successful?
+        assert_eq!(true, r_2.success)
+    }
+
+    #[test]
+    fn t_7_delete_user() {
         // Database connection
         let db_conn = PgConnection::establish(&database_url()).unwrap();
+
+        // Deleting all assignments in the table
+        let delete_all_assignments = diesel::delete(assignment_object).execute(&db_conn);
 
         // Deleting all students in the table
         let delete_all_students = diesel::delete(students_object).execute(&db_conn);
@@ -232,6 +295,7 @@ mod tests {
             diesel::delete(users_object.filter(users::user_id.eq("234"))).execute(&db_conn);
 
         // Are the rows deleted?
+        assert_eq!(Ok(1), delete_all_assignments);
         assert_eq!(Ok(1), delete_all_students);
         assert_eq!(Ok(1), delete_all_teachers);
         assert_eq!(Ok(1), delete_all_classes);
