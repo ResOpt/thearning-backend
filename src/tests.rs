@@ -2,7 +2,6 @@
 mod tests {
     extern crate diesel;
 
-    use chrono::NaiveDate;
     use rocket::http::{ContentType, Header, Status};
     use rocket::local::blocking::Client;
     use rocket::serde::Deserialize;
@@ -11,14 +10,13 @@ mod tests {
     use crate::classes::models::Classroom;
     use crate::db::database_url;
     use crate::rocket;
+    use crate::schema::assignments::dsl::assignments as assignment_object;
     use crate::schema::classes;
     use crate::schema::classes::dsl::classes as classes_object;
     use crate::schema::students::dsl::students as students_object;
     use crate::schema::teachers::dsl::teachers as teachers_object;
     use crate::schema::users;
     use crate::schema::users::dsl::users as users_object;
-    use crate::schema::assignments;
-    use crate::schema::assignments::dsl::assignments as assignment_object;
     use crate::users::models::{ClassUser, Student};
 
     use self::diesel::prelude::*;
@@ -44,7 +42,6 @@ mod tests {
     struct SuccessOrNot {
         success: bool,
     }
-
 
     #[derive(Deserialize)]
     struct UserData {
@@ -92,12 +89,12 @@ mod tests {
     #[test]
     fn t_1_create_user() {
         let string = r#"{
-                         "user_id": "123", 
+                         "user_id": "123",
                          "fullname":"Dummy Student",
-                         "profile_photo":"dummy.jpg", 
+                         "profile_photo":"dummy.jpg",
                          "email":"dummystudent@mail.com",
-                         "password":"dummy", 
-                         "bio": "Dummy", 
+                         "password":"dummy",
+                         "bio": "Dummy",
                          "status":"student"
                         }
                      "#;
@@ -226,7 +223,6 @@ mod tests {
 
     #[test]
     fn t_6_create_assignment() {
-
         let client = client();
 
         let token = auth_request().1.token;
@@ -246,14 +242,17 @@ mod tests {
         let sample_class = classrooms.first().unwrap();
 
         // Data
-        let string = format!(r#"{{"assignment": {{"assignment_name": "Dummy Assignment",
+        let string = format!(
+            r#"{{"assignment": {{"assignment_name": "Dummy Assignment",
                                                        "class_id": "{}",
                                                        "due_date": null,
                                                        "due_time": null,
                                                        "instructions": "Do this and that"
                                                      }},
                                          "files": null
-                                  }}"#, sample_class.class_id);
+                                  }}"#,
+            sample_class.class_id
+        );
 
         // Sending post request to create a new assignment
         let response_2 = client

@@ -1,7 +1,7 @@
 use rocket::http::Status;
-use rocket::serde::json::serde_json::json;
-use rocket::serde::json::Json;
 use rocket::serde::{Deserialize, Serialize};
+use rocket::serde::json::Json;
+use rocket::serde::json::serde_json::json;
 use rocket_dyn_templates::handlebars::JsonValue;
 
 use crate::assignments::models::{Assignments, FillableAssignments};
@@ -36,18 +36,25 @@ fn create(
             for file in f {
                 let new_file = match UploadedFile::new(&file.filename, &file.filetype, &*conn) {
                     Ok(nf) => nf,
-                    Err(_) => return Err(Json(json!({"success":false})))
+                    Err(_) => return Err(Json(json!({"success":false}))),
                 };
-                let new_attachment = match Attachment::create(&new_file.file_id, &Some(&new_assignment.assignment_id), &key.0, &*conn) {
+                let new_attachment = match Attachment::create(
+                    &new_file.file_id,
+                    &Some(&new_assignment.assignment_id),
+                    &key.0,
+                    &*conn,
+                ) {
                     Ok(na) => na,
-                    Err(_) => return Err(Json(json!({"success":false})))
+                    Err(_) => return Err(Json(json!({"success":false}))),
                 };
             }
         }
-        None => {},
+        None => {}
     };
 
-    Ok(Json(json!({"success": true, "assignment_id": new_assignment.assignment_id})))
+    Ok(Json(
+        json!({"success": true, "assignment_id": new_assignment.assignment_id}),
+    ))
 }
 
 #[get("/<assignment_id>", rank = 2)]

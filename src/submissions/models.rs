@@ -1,5 +1,4 @@
 use chrono::{NaiveDate, NaiveTime};
-use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::schema::submissions;
