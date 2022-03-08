@@ -20,7 +20,7 @@ pub struct Assignments {
     pub total_marks: Option<i32>,
 }
 
-#[derive(Serialize, Deserialize, Queryable, Insertable)]
+#[derive(Serialize, Deserialize, Queryable, Insertable, Clone)]
 #[table_name = "assignments"]
 pub struct FillableAssignments {
     pub assignment_name: String,

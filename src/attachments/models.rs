@@ -27,7 +27,7 @@ pub struct AttachmentResult {
 impl Attachment {
     pub fn create(
         file_id: &String,
-        assignment_id: &Option<String>,
+        assignment_id: &Option<&String>,
         uploader: &String,
         conn: &PgConnection,
     ) -> QueryResult<AttachmentResult> {

@@ -19,16 +19,16 @@ impl FileType {
     }
 }
 
-#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations)]
+#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Clone)]
 #[table_name = "files"]
 pub struct UploadedFile {
-    file_id: String,
-    filename: String,
-    filetype: String,
+    pub file_id: String,
+    pub filename: String,
+    pub filetype: String,
 }
 
 impl UploadedFile {
-    pub fn new(filename: &str, filetype: &str, conn: &PgConnection) -> QueryResult<Self> {
+    pub fn new(filename: &String, filetype: &String, conn: &PgConnection) -> QueryResult<Self> {
         let new_file = Self {
             file_id: generate_random_id().to_string(),
             filename: filename.to_string(),
