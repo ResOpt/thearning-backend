@@ -41,6 +41,7 @@ table! {
         file_id -> Varchar,
         filename -> Varchar,
         file_path -> Varchar,
+        file_url -> Varchar,
         filetype -> Varchar,
     }
 }

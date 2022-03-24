@@ -34,7 +34,7 @@ fn create(
     match &files {
         Some(f) => {
             for file in f {
-                let new_file = match UploadedFile::new(&file.file_id, &file.filename, &file.filetype, &file.file_path, &*conn) {
+                let new_file = match UploadedFile::new(&file.file_id, &file.filename, &file.file_path, &file.file_url,&file.filetype, &*conn) {
                     Ok(nf) => nf,
                     Err(_) => return Err(Json(json!({"success":false}))),
                 };

@@ -6,7 +6,7 @@ use rocket::request::{self, FromRequest, Request};
 use serde::{Deserialize, Serialize};
 
 use crate::db::database_url;
-use crate::errors::Errors;
+use crate::catchers::Errors;
 use crate::users::models::{Role, User};
 use crate::users::utils::is_email;
 

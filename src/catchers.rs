@@ -1,8 +1,6 @@
+use rocket::serde::json::{Json, Value as JsonValue};
 use std::fmt;
-
-use rocket::serde::json::Json;
 use rocket::serde::json::serde_json::json;
-use rocket_dyn_templates::handlebars::JsonValue;
 
 #[derive(Debug)]
 pub enum Errors {

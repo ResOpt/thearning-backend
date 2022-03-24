@@ -12,7 +12,7 @@ use crate::files::routes;
 use crate::users::models::{InsertableUser, Role, User};
 
 #[post("/", data = "<user>")]
-async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> Result<Status, Status> {
+async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
     let mut _user = user.into_inner();
     match Role::from_str(&_user.status) {
         Ok(_) => {}
@@ -40,7 +40,9 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
     };
 
     match User::create(new_user, &connection) {
-        Ok(query) => Ok(Status::Ok),
+        Ok(query) => Ok(Json(json!({
+            "status": 200,
+        }))),
         Err(_) => Err(Status::Conflict),
     }
 }

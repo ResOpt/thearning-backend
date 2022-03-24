@@ -15,7 +15,7 @@ pub async fn process_image<'a>(mut image: TempFile<'a>, filename: &String) -> io
     let file = format!("{}/{}/{}-{}", current_dir.display(), MEDIA_URL, &file_id, filename);
     let url = format!("{}/{}-{}", "http://localhost:8000/api/media/img", &file_id, filename);
     let db_conn = PgConnection::establish(&database_url()).unwrap();
-    UploadedFile::new(&file_id, &filename, &url, &"image".to_string(), &db_conn);
+    UploadedFile::new(&file_id, &filename, &file,&url, &"image".to_string(), &db_conn);
     image.move_copy_to(&file).await?;
     Ok(url)
 }

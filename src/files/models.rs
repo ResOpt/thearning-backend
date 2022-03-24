@@ -30,15 +30,17 @@ pub struct UploadedFile {
     pub file_id: String,
     pub filename: String,
     pub file_path: String,
+    pub file_url: String,
     pub filetype: String,
 }
 
 impl UploadedFile {
-    pub fn new(file_id: &String, filename: &String, file_path: &String, filetype: &String, conn: &PgConnection) -> QueryResult<Self> {
+    pub fn new(file_id: &String, filename: &String, file_path: &String, file_url: &String, filetype: &String, conn: &PgConnection) -> QueryResult<Self> {
         let new_file = Self {
             file_id: file_id.to_string(),
             filename: filename.to_string(),
             file_path: file_path.to_string(),
+            file_url: file_url.to_string(),
             filetype: filetype.to_string(),
         };
 
