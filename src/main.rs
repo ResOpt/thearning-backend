@@ -14,6 +14,7 @@ use rocket_cors::{AllowedHeaders, AllowedOrigins, Cors, CorsOptions};
 use assignments::routes as assignment_routes;
 use classes::routes as class_routes;
 use errors::mount as error_routes;
+use files::routes as file_routes;
 use users::routes as user_routes;
 
 mod classes;
@@ -29,6 +30,8 @@ pub mod schema;
 mod submissions;
 mod tests;
 mod utils;
+
+const MEDIA_URL: &str = "media";
 
 #[cfg(debug_assertions)]
 fn allowed_origins() -> AllowedOrigins {
@@ -53,8 +56,8 @@ fn make_cors() -> Cors {
         allow_credentials: true,
         ..Default::default()
     }
-    .to_cors()
-    .expect("error while building CORS")
+        .to_cors()
+        .expect("error while building CORS")
 }
 
 #[launch]
@@ -63,6 +66,7 @@ fn rocket() -> rocket::Rocket<rocket::Build> {
     rocket = user_routes::mount(rocket);
     rocket = class_routes::mount(rocket);
     rocket = assignment_routes::mount(rocket);
+    rocket = file_routes::mount(rocket);
     rocket = error_routes(rocket).attach(make_cors());
     rocket
 }

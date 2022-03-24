@@ -4,7 +4,6 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::schema::files;
-use crate::utils::generate_random_id;
 
 pub enum FileType {
     Video,
@@ -15,7 +14,13 @@ pub enum FileType {
 
 impl FileType {
     pub fn from_str(filetype: &str) -> Self {
-        unimplemented!()
+        match filetype {
+            "video" => Self::Video,
+            "image" => Self::Image,
+            "document" => Self::Document,
+            "pdf" => Self::PDF,
+            _ => unimplemented!()
+        }
     }
 }
 
@@ -24,14 +29,16 @@ impl FileType {
 pub struct UploadedFile {
     pub file_id: String,
     pub filename: String,
+    pub file_path: String,
     pub filetype: String,
 }
 
 impl UploadedFile {
-    pub fn new(filename: &String, filetype: &String, conn: &PgConnection) -> QueryResult<Self> {
+    pub fn new(file_id: &String, filename: &String, file_path: &String, filetype: &String, conn: &PgConnection) -> QueryResult<Self> {
         let new_file = Self {
-            file_id: generate_random_id().to_string(),
+            file_id: file_id.to_string(),
             filename: filename.to_string(),
+            file_path: file_path.to_string(),
             filetype: filetype.to_string(),
         };
 
@@ -40,5 +47,9 @@ impl UploadedFile {
             .execute(conn)?;
 
         files::table.find(new_file.file_id).get_result::<Self>(conn)
+    }
+
+    pub fn receive(file_id: &String, conn: &PgConnection) -> QueryResult<Self> {
+        files::table.find(file_id).get_result::<Self>(conn)
     }
 }

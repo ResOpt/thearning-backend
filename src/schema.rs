@@ -40,6 +40,7 @@ table! {
     files (file_id) {
         file_id -> Varchar,
         filename -> Varchar,
+        file_path -> Varchar,
         filetype -> Varchar,
     }
 }

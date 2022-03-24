@@ -13,6 +13,7 @@ mod tests {
     use crate::schema::assignments::dsl::assignments as assignment_object;
     use crate::schema::classes;
     use crate::schema::classes::dsl::classes as classes_object;
+    use crate::schema::files::dsl::files as files_object;
     use crate::schema::students::dsl::students as students_object;
     use crate::schema::teachers::dsl::teachers as teachers_object;
     use crate::schema::users;
@@ -88,27 +89,9 @@ mod tests {
 
     #[test]
     fn t_1_create_user() {
-        let string = r#"{
-                         "user_id": "123",
-                         "fullname":"Dummy Student",
-                         "profile_photo":"dummy.jpg",
-                         "email":"dummystudent@mail.com",
-                         "password":"dummy",
-                         "bio": "Dummy",
-                         "status":"student"
-                        }
-                     "#;
+        let string = "user_id=123&fullname=Dummy Student&image=@assets/placeholder.png&file_name=placeholder.png&email=dummystudent@mail.com&password=dummy&bio=Dummy&status=student";
 
-        let string_2 = r#"{
-                         "user_id": "234",
-                         "fullname":"Dummy Teacher",
-                         "profile_photo":"dummy.jpg",
-                         "email":"dummyteacher@mail.com",
-                         "password":"dummy",
-                         "bio": "Dummy",
-                         "status":"teacher"
-                        }
-                     "#;
+        let string_2 = "user_id=234&fullname=Dummy Teacher&image=@assets/placeholder.png&file_name=placeholder.png&email=dummyteacher@mail.com&password=dummy&bio=Dummy&status=teacher";
 
         // Construct the client
         let client = client();
@@ -116,13 +99,15 @@ mod tests {
         // Creating the dummy users
         let response_create = client
             .post("/api/user")
-            .header(ContentType::JSON)
+            //.header(ContentType::new("multipart", "form-data; boundary=--------------------------293582696224464"))
+            .header(ContentType::Form)
             .body(string)
             .dispatch();
 
         let response_create_2 = client
             .post("/api/user")
-            .header(ContentType::JSON)
+            //.header(ContentType::new("multipart", "form-data; boundary=--------------------------293582696224464"))
+            .header(ContentType::Form)
             .body(string_2)
             .dispatch();
 
@@ -270,9 +255,11 @@ mod tests {
     }
 
     #[test]
-    fn t_7_delete_user() {
+    fn t_7_delete_all() {
         // Database connection
         let db_conn = PgConnection::establish(&database_url()).unwrap();
+
+        let delete_all_files = diesel::delete(files_object).execute(&db_conn);
 
         // Deleting all assignments in the table
         let delete_all_assignments = diesel::delete(assignment_object).execute(&db_conn);
@@ -294,6 +281,7 @@ mod tests {
             diesel::delete(users_object.filter(users::user_id.eq("234"))).execute(&db_conn);
 
         // Are the rows deleted?
+        assert_eq!(Ok(2), delete_all_files);
         assert_eq!(Ok(1), delete_all_assignments);
         assert_eq!(Ok(1), delete_all_students);
         assert_eq!(Ok(1), delete_all_teachers);

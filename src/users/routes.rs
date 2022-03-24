@@ -1,4 +1,5 @@
 use jsonwebtoken::{Algorithm, Header};
+use rocket::form::Form;
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::serde::json::serde_json::json;
@@ -7,20 +8,38 @@ use serde::{Deserialize, Serialize};
 
 use crate::auth::{ApiKey, generate_token};
 use crate::db;
-use crate::users::models::{Role, User};
+use crate::files::routes;
+use crate::users::models::{InsertableUser, Role, User};
 
 #[post("/", data = "<user>")]
-fn create(user: Json<User>, connection: db::DbConn) -> Result<Status, Status> {
-    let _user = user.into_inner();
+async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> Result<Status, Status> {
+    let mut _user = user.into_inner();
     match Role::from_str(&_user.status) {
         Ok(_) => {}
         Err(_) => return Err(Status::Conflict),
     }
-    match User::create(_user, &connection) {
+
+    let image_file = match routes::process_image(_user.image, &_user.file_name).await {
+        Ok(v) => v,
+        Err(_) => return Err(Status::NotFound)
+    };
+
+    let new_user = User {
+        user_id: _user.user_id.to_string(),
+        fullname: _user.fullname.to_string(),
+        profile_photo: image_file,
+        email: _user.email.to_string(),
+        password: _user.password.to_string(),
+        bio: _user.bio.to_string(),
+        status: _user.status.to_string(),
+    };
+
+    match User::create(new_user, &connection) {
         Ok(query) => Ok(Status::Ok),
         Err(_) => Err(Status::Conflict),
     }
 }
+
 
 #[derive(Serialize, Deserialize)]
 struct Credentials {

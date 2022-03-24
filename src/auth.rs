@@ -61,9 +61,6 @@ pub fn read_token(key: &str) -> Result<String, Errors> {
         &Validation::new(Algorithm::HS512),
     ) {
         Ok(v) => {
-            if v.claims.exp < now {
-                return Err(Errors::TokenExpired);
-            }
             Ok(v.claims.sub)
         }
         Err(_) => Err(Errors::TokenInvalid),

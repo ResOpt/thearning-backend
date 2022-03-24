@@ -4,6 +4,7 @@ use bcrypt::{DEFAULT_COST, hash, verify};
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
+use rocket::fs::TempFile;
 use serde::{Deserialize, Serialize};
 
 use crate::schema::admins;
@@ -39,7 +40,7 @@ impl fmt::Display for Role {
     }
 }
 
-#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations)]
+#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, FromForm)]
 #[table_name = "users"]
 pub struct User {
     pub user_id: String,
@@ -51,8 +52,20 @@ pub struct User {
     pub status: String,
 }
 
+#[derive(FromForm)]
+pub struct InsertableUser<'a> {
+    pub user_id: String,
+    pub fullname: String,
+    pub email: String,
+    pub password: String,
+    pub bio: String,
+    pub status: String,
+    pub image: TempFile<'a>,
+    pub file_name: String,
+}
+
 #[derive(
-    Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable, Debug,
+Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable, Debug,
 )]
 #[belongs_to(User)]
 #[table_name = "students"]
@@ -63,7 +76,7 @@ pub struct Student {
 }
 
 #[derive(
-    Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable,
+Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable,
 )]
 #[belongs_to(User)]
 #[table_name = "teachers"]
@@ -74,7 +87,7 @@ pub struct Teacher {
 }
 
 #[derive(
-    Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable,
+Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable,
 )]
 #[belongs_to(User)]
 #[table_name = "admins"]
@@ -146,8 +159,8 @@ impl User {
 
 pub trait ClassUser {
     fn create(uid: &String, class_id: &String, connection: &PgConnection) -> QueryResult<Self>
-    where
-        Self: Sized;
+        where
+            Self: Sized;
 }
 
 macro_rules! impl_classuser {
