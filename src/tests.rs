@@ -89,9 +89,9 @@ mod tests {
 
     #[test]
     fn t_1_create_user() {
-        let string = "user_id=123&fullname=Dummy Student&image=@assets/placeholder.png&file_name=placeholder.png&email=dummystudent@mail.com&password=dummy&bio=Dummy&status=student";
+        let string = "user_id=123&fullname=Dummy Student&image=0/placeholder.png&file_name=placeholder.png&email=dummystudent@mail.com&password=dummy&bio=Dummy&status=student";
 
-        let string_2 = "user_id=234&fullname=Dummy Teacher&image=@assets/placeholder.png&file_name=placeholder.png&email=dummyteacher@mail.com&password=dummy&bio=Dummy&status=teacher";
+        let string_2 = "user_id=234&fullname=Dummy Teacher&image=0&file_name=placeholder.png&email=dummyteacher@mail.com&password=dummy&bio=Dummy&status=teacher";
 
         // Construct the client
         let client = client();
@@ -281,7 +281,7 @@ mod tests {
             diesel::delete(users_object.filter(users::user_id.eq("234"))).execute(&db_conn);
 
         // Are the rows deleted?
-        assert_eq!(Ok(2), delete_all_files);
+        assert_eq!(Ok(0), delete_all_files);
         assert_eq!(Ok(1), delete_all_assignments);
         assert_eq!(Ok(1), delete_all_students);
         assert_eq!(Ok(1), delete_all_teachers);

@@ -19,9 +19,14 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
         Err(_) => return Err(Status::Conflict),
     }
 
-    let image_file = match routes::process_image(_user.image, &_user.file_name).await {
-        Ok(v) => v,
-        Err(_) => return Err(Status::NotFound)
+    let image_file = match &_user.image.name() {
+        Some(_) => match routes::process_image(_user.image, &_user.file_name).await {
+            Ok(v) => v,
+            Err(_) => return Err(Status::BadRequest)
+        }
+        None => {
+            String::from("http://localhost:8000/api/media/img/placeholder.png")
+        }
     };
 
     let new_user = User {
