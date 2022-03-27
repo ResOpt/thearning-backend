@@ -156,16 +156,22 @@ mod tests {
 
     #[test]
     fn t_4_create_classroom() {
-        let string = r#"
-                    {
-                        "class_name":"Dummy Class",
-                        "section":"Dummy Section"
-                    }
-                 "#;
-
-        let client = client();
 
         let r = auth_request();
+
+        let read = read_token(&r.0.token).unwrap();
+
+        let string = format!(
+            r#"{{"class_name": "Test Class",
+               "class_creator": "{}",
+               "class_description": "Just a test class",
+               "class_image":null,
+               "section":"testing class"
+              }}"#,
+            read
+        );
+
+        let client = client();
 
         // Sending POST method to create a classroom
         let mut response_classroom = client

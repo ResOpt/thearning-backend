@@ -1,5 +1,3 @@
--- Your SQL goes here
-
 CREATE TABLE attachments(
     attachment_id VARCHAR NOT NULL PRIMARY KEY,
     file_id VARCHAR NOT NULL,

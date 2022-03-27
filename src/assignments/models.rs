@@ -13,6 +13,7 @@ pub struct Assignments {
     pub assignment_id: String,
     pub assignment_name: String,
     pub class_id: String,
+    pub topic_id: Option<String>,
     pub due_date: Option<NaiveDate>,
     pub due_time: Option<NaiveTime>,
     pub posted_date: NaiveDate,
@@ -25,6 +26,7 @@ pub struct Assignments {
 pub struct FillableAssignments {
     pub assignment_name: String,
     pub class_id: String,
+    pub topic_id: Option<String>,
     pub due_date: Option<NaiveDate>,
     pub due_time: Option<NaiveTime>,
     pub instructions: Option<String>,
@@ -39,6 +41,7 @@ impl Assignments {
             assignment_id: generate_random_id().to_string(),
             assignment_name: assignment_data.assignment_name,
             class_id: assignment_data.class_id,
+            topic_id: assignment_data.topic_id,
             due_date: match assignment_data.due_date {
                 Some(v) => Some(NaiveDate::from(v)),
                 None => None,
