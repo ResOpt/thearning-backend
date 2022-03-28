@@ -7,7 +7,7 @@ use rocket::serde::json::serde_json::json;
 use rocket_dyn_templates::handlebars::JsonValue;
 
 use crate::auth::ApiKey;
-use crate::classes::models::{Classroom, NewClassroom};
+use crate::classes::models::{Classroom, NewClassroom, NewTopic, Topic};
 use crate::classes::utils::get_class_codes;
 use crate::db;
 use crate::db::DbConn;
@@ -18,6 +18,8 @@ use crate::schema::students::dsl::students;
 use crate::schema::students::user_id as student_id;
 use crate::schema::teachers::dsl::teachers;
 use crate::schema::teachers::user_id as teacher_id;
+use crate::schema::students::class_id as class_id_students;
+use crate::schema::teachers::class_id as class_id_teachers;
 use crate::schema::users;
 use crate::users::models::{Admin, ClassUser, Role, Student, Teacher, User};
 
@@ -142,14 +144,45 @@ fn classrooms(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, St
     }
 }
 
+#[post("/topic", data = "<new_topic>")]
+fn topic(key: ApiKey, new_topic: Json<NewTopic>, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
+    let topic = new_topic.into_inner();
+
+    match User::get_role(&key.0, &*connection).unwrap() {
+        Role::Student => {
+            return Err(Status::Forbidden)
+        }
+        _ => {
+            match Topic::create(topic, &*connection) {
+                Ok(_) => {}
+                Err(_) => {
+                    return Err(Status::Conflict)
+                }
+            };
+        }
+    }
+
+    Ok(Json(json!({"status":200})))
+}
+
 #[get("/<class_id>", rank = 2)]
 fn class(key: ApiKey, class_id: String, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
-    unimplemented!()
+    let students_ = students
+        .filter(class_id_students.eq(&class_id))
+        .load::<Student>(&*connection)
+        .unwrap().into_iter().collect::<Vec<Student>>();
+
+    let teachers_ = teachers
+        .filter(class_id_teachers.eq(&class_id))
+        .load::<Teacher>(&*connection)
+        .unwrap().into_iter().collect::<Vec<Teacher>>();
+
+    todo!()
 }
 
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     rocket.mount(
         "/api/classroom",
-        routes![create_classroom, join, classrooms],
+        routes![create_classroom, join, classrooms, topic, class],
     )
 }

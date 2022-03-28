@@ -34,9 +34,15 @@ Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identi
 #[belongs_to(Classroom)]
 #[table_name = "topics"]
 pub struct Topic {
-    id: String,
-    topic_name: String,
-    classroom_id: String,
+    pub id: String,
+    pub topic_name: String,
+    pub classroom_id: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct NewTopic {
+    pub topic_name: String,
+    pub classroom_id: String,
 }
 
 impl Classroom {
@@ -62,13 +68,13 @@ impl Classroom {
 }
 
 impl Topic {
-    pub fn create(topic_name: &String, class_id: &String, connection: &PgConnection) -> QueryResult<Self> {
+    pub fn create(topic: NewTopic, connection: &PgConnection) -> QueryResult<Self> {
         let generate_code = generate_random_id().to_string();
 
         let new_topic = Self {
             id: generate_code,
-            topic_name: topic_name.to_string(),
-            classroom_id: class_id.to_string(),
+            topic_name: topic.topic_name,
+            classroom_id: topic.classroom_id,
         };
 
         diesel::insert_into(topics::table)
