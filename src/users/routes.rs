@@ -1,3 +1,4 @@
+use std::path::Path;
 use jsonwebtoken::{Algorithm, Header};
 use rocket::form::Form;
 use rocket::http::Status;
@@ -18,6 +19,18 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
         Ok(_) => {}
         Err(_) => return Err(Status::Conflict),
     }
+
+    let path = match _user.image.name() {
+        Some(v) => v,
+        None => return Err(Status::BadRequest)
+    };
+
+    // let extract_filename = Path::new(&path).file_name();
+    //
+    // let extracted: String = match extract_filename.unwrap().to_str().map(|s| s.to_string()) {
+    //     Some(v) => v,
+    //     None => return Err(Status::UnprocessableEntity),
+    // };
 
     let image_file = match &_user.image.name() {
         Some(_) => match routes::process_image(_user.image, &_user.file_name).await {
@@ -45,6 +58,12 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
         }))),
         Err(_) => Err(Status::Conflict),
     }
+}
+
+
+#[delete("/", data = "<user_id>")]
+fn delete_user(key: ApiKey, user_id: String, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
+    todo!()
 }
 
 
