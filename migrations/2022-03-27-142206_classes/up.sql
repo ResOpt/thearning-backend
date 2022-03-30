@@ -6,5 +6,5 @@ CREATE TABLE classes(
     class_image VARCHAR,
     section VARCHAR NOT NULL,
 
-    FOREIGN KEY(class_creator) REFERENCES users(user_id)
+    FOREIGN KEY(class_creator) REFERENCES users(user_id) ON DELETE NO ACTION
 )

@@ -15,7 +15,10 @@ use crate::files::models::UploadedFile;
 use crate::files::routes;
 use crate::schema::files::dsl::files;
 use crate::schema::files::{file_path, file_url};
+use crate::schema::users::dsl::users;
+use crate::schema::users::{email, user_id};
 use crate::users::models::{InsertableUser, Role, User};
+use crate::users::utils::is_email;
 
 #[post("/", data = "<user>")]
 async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
@@ -24,18 +27,6 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
         Ok(_) => {}
         Err(_) => return Err(Status::Conflict),
     }
-
-    // let path = match _user.image.name() {
-    //     Some(v) => v,
-    //     None => return Err(Status::BadRequest)
-    // };
-
-    // let extract_filename = Path::new(&path).file_name();
-    //
-    // let extracted: String = match extract_filename.unwrap().to_str().map(|s| s.to_string()) {
-    //     Some(v) => v,
-    //     None => return Err(Status::UnprocessableEntity),
-    // };
 
     let image_file = match &_user.image.name() {
         Some(_) => {
@@ -77,10 +68,33 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
     }
 }
 
+#[delete("/", data = "<uid>")]
+fn delete_user(key: ApiKey, uid: String, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
 
-#[delete("/", data = "<user_id>")]
-fn delete_user(key: ApiKey, user_id: String, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
-    todo!()
+    match User::get_role(&key.0, &*conn).unwrap() {
+        Role::Admin => {
+            match diesel::delete(users.filter(user_id.eq_all(&uid)))
+                .execute(&*conn) {
+                Ok(_) => {
+
+                }
+                Err(_) => {
+                    match diesel::delete(users.filter(email.eq_all(&uid)))
+                        .execute(&*conn) {
+                        Ok(_) => {
+
+                        }
+                        Err(_) => {
+                            return Err(Status::BadRequest)
+                        }
+                    }
+                }
+            }
+        }
+        _ => return Err(Status::Unauthorized)
+    }
+
+    Ok(Json(json!({"status": 200})))
 }
 
 
@@ -131,6 +145,6 @@ fn info(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, Status> 
 
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     rocket
-        .mount("/api/user", routes![create, info])
+        .mount("/api/user", routes![create, info, delete_user])
         .mount("/api/auth", routes![login])
 }
