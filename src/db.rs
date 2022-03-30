@@ -3,7 +3,6 @@ use std::ops::Deref;
 
 use diesel::pg::PgConnection;
 use diesel::r2d2::ConnectionManager;
-use dotenv::dotenv;
 use r2d2;
 use rocket::http::Status;
 use rocket::outcome::try_outcome;
@@ -19,13 +18,11 @@ pub fn init_pool() -> Pool {
 
 #[cfg(not(test))]
 pub fn database_url() -> String {
-    dotenv().ok();
     env::var("DATABASE_URL").expect("DATABASE_URL must be set")
 }
 
 #[cfg(test)]
 pub fn database_url() -> String {
-    dotenv().ok();
     env::var("DATABASE_URL_TEST").expect("DATABASE_URL must be set")
 }
 

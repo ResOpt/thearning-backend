@@ -17,6 +17,8 @@ use catchers::mount as error_routes;
 use files::routes as file_routes;
 use users::routes as user_routes;
 
+use dotenv::dotenv;
+
 mod classes;
 mod users;
 
@@ -62,6 +64,7 @@ fn make_cors() -> Cors {
 
 #[launch]
 fn rocket() -> rocket::Rocket<rocket::Build> {
+    dotenv().ok();
     let mut rocket = rocket::build().manage(db::init_pool());
     rocket = user_routes::mount(rocket);
     rocket = class_routes::mount(rocket);

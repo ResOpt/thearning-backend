@@ -38,6 +38,9 @@ jobs:
       - name: Install diesel
         run: |
           cargo install diesel_cli --no-default-features --features "postgres"
+          echo "DATABASE_URL=postgres://postgres:postgres@localhost/thearningdb" >> .env
+          echo "DATABASE_URL_TEST=postgres://postgres:postgres@localhost/thearningtest" >> .env
+          echo "SITE_URL=localhost:8000" >> .env
           export "PATH=~/.cargo/bin:$PATH"
           diesel migration run --database-url "postgres://postgres:postgres@localhost/thearningdb"
           diesel migration run --database-url "postgres://postgres:postgres@localhost/thearningtest"

@@ -1,4 +1,6 @@
+use std::{env, fs};
 use std::path::Path;
+use diesel::{EqAll, QueryDsl, RunQueryDsl};
 use jsonwebtoken::{Algorithm, Header};
 use rocket::form::Form;
 use rocket::http::Status;
@@ -9,7 +11,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::auth::{ApiKey, generate_token};
 use crate::db;
+use crate::files::models::UploadedFile;
 use crate::files::routes;
+use crate::schema::files::dsl::files;
+use crate::schema::files::{file_path, file_url};
 use crate::users::models::{InsertableUser, Role, User};
 
 #[post("/", data = "<user>")]
@@ -20,10 +25,10 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
         Err(_) => return Err(Status::Conflict),
     }
 
-    let path = match _user.image.name() {
-        Some(v) => v,
-        None => return Err(Status::BadRequest)
-    };
+    // let path = match _user.image.name() {
+    //     Some(v) => v,
+    //     None => return Err(Status::BadRequest)
+    // };
 
     // let extract_filename = Path::new(&path).file_name();
     //
@@ -33,19 +38,22 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
     // };
 
     let image_file = match &_user.image.name() {
-        Some(_) => match routes::process_image(_user.image, &_user.file_name).await {
-            Ok(v) => v,
-            Err(_) => return Err(Status::BadRequest)
+        Some(_) => {
+            match routes::process_image(_user.image, &_user.file_name).await {
+                Ok(v) => v,
+                Err(_) => return Err(Status::BadRequest)
+            }
         }
         None => {
-            String::from("http://localhost:8000/api/media/img/placeholder.png")
+            let url = env::var("SITE_URL").unwrap();
+            format!("{}/api/media/img/placeholder.png", url)
         }
     };
 
     let new_user = User {
         user_id: _user.user_id.to_string(),
         fullname: _user.fullname.to_string(),
-        profile_photo: image_file,
+        profile_photo: image_file.clone(),
         email: _user.email.to_string(),
         password: _user.password.to_string(),
         bio: _user.bio.to_string(),
@@ -56,7 +64,16 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
         Ok(query) => Ok(Json(json!({
             "status": 200,
         }))),
-        Err(_) => Err(Status::Conflict),
+        Err(_) => {
+            let file_obj = files
+                .filter(file_url.eq_all(image_file))
+                .get_result::<UploadedFile>(&*connection).unwrap();
+            fs::remove_file(&file_obj.file_path).unwrap();
+            diesel::delete(files.filter(file_path.eq_all(&file_obj.file_path)))
+                .execute(&*connection)
+                .unwrap();
+            Err(Status::Conflict)
+        },
     }
 }
 
