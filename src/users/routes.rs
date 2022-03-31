@@ -16,7 +16,7 @@ use crate::files::routes;
 use crate::schema::files::dsl::files;
 use crate::schema::files::{file_path, file_url};
 use crate::schema::users::dsl::users;
-use crate::schema::users::{email, user_id};
+use crate::schema::users::{email, profile_photo, user_id};
 use crate::users::models::{InsertableUser, Role, User};
 use crate::users::utils::is_email;
 
@@ -26,6 +26,25 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
     match Role::from_str(&_user.status) {
         Ok(_) => {}
         Err(_) => return Err(Status::Conflict),
+    }
+
+    let new_user = User {
+        user_id: _user.user_id.to_string(),
+        fullname: _user.fullname.to_string(),
+        profile_photo: "".to_string(),
+        email: _user.email.to_string(),
+        password: _user.password.to_string(),
+        bio: _user.bio.to_string(),
+        status: _user.status.to_string(),
+    };
+
+    let cloned_user = new_user.clone();
+
+    match User::create(new_user, &connection) {
+        Ok(query) => {}
+        Err(_) => {
+            return Err(Status::Conflict)
+        },
     }
 
     let image_file = match &_user.image.name() {
@@ -41,31 +60,11 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
         }
     };
 
-    let new_user = User {
-        user_id: _user.user_id.to_string(),
-        fullname: _user.fullname.to_string(),
-        profile_photo: image_file.clone(),
-        email: _user.email.to_string(),
-        password: _user.password.to_string(),
-        bio: _user.bio.to_string(),
-        status: _user.status.to_string(),
-    };
+    diesel::update(users.filter(user_id.eq_all(cloned_user.user_id)))
+        .set(profile_photo.eq_all(image_file))
+        .execute(&*connection).unwrap();
 
-    match User::create(new_user, &connection) {
-        Ok(query) => Ok(Json(json!({
-            "status": 200,
-        }))),
-        Err(_) => {
-            let file_obj = files
-                .filter(file_url.eq_all(image_file))
-                .get_result::<UploadedFile>(&*connection).unwrap();
-            fs::remove_file(&file_obj.file_path).unwrap();
-            diesel::delete(files.filter(file_path.eq_all(&file_obj.file_path)))
-                .execute(&*connection)
-                .unwrap();
-            Err(Status::Conflict)
-        },
-    }
+    Ok(Json(json!({"status": 200})))
 }
 
 #[delete("/", data = "<uid>")]

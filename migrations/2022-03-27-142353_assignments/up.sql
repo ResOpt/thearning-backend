@@ -9,6 +9,6 @@ CREATE TABLE assignments(
     instructions TEXT,
     total_marks INT,
 
-    FOREIGN KEY (class_id) REFERENCES classes(class_id) ON DELETE NO ACTION,
-    FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE NO ACTION
+    FOREIGN KEY (class_id) REFERENCES classes(class_id) ON DELETE CASCADE ,
+    FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE
 )

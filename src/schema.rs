@@ -33,7 +33,7 @@ table! {
     classes (class_id) {
         class_id -> Varchar,
         class_name -> Varchar,
-        class_creator -> Varchar,
+        class_creator -> Nullable<Varchar>,
         class_description -> Nullable<Varchar>,
         class_image -> Nullable<Varchar>,
         section -> Varchar,

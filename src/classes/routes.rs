@@ -29,10 +29,13 @@ pub fn create_classroom(
     new_class: Json<NewClassroom>,
     connection: db::DbConn,
 ) -> Result<Json<JsonValue>, Status> {
+
+    let user = User::find_user(&key.0, &*connection).unwrap();
+
     if let Ok(r) = User::get_role(&key.0, &connection) {
         match r {
             Role::Student => Err(Status::Forbidden),
-            Role::Teacher => match Classroom::create(new_class.into_inner(), &connection) {
+            Role::Teacher => match Classroom::create(new_class.into_inner(), &user.user_id, &connection) {
                 Ok(id) => {
                     Teacher::create(&key.0, &id.class_id, &connection).unwrap();
 
@@ -40,8 +43,12 @@ pub fn create_classroom(
                 }
                 Err(e) => Err(Status::InternalServerError),
             },
-            Role::Admin => match Classroom::create(new_class.into_inner(), &connection) {
-                Ok(id) => Ok(Json(json!({ "success": true, "class_id":  id.class_id}))),
+            Role::Admin => match Classroom::create(new_class.into_inner(), &user.user_id, &connection) {
+                Ok(id) => {
+                    Admin::create(&key.0, &id.class_id, &connection).unwrap();
+
+                    Ok(Json(json!({ "success": true, "class_id":  id.class_id})))
+                },
                 Err(e) => Err(Status::InternalServerError),
             },
         }
@@ -49,9 +56,6 @@ pub fn create_classroom(
         Err(Status::Forbidden)
     }
 }
-
-//#[derive(Serialize, Deserialize)]
-//pub struct ClassCode(pub String);
 
 fn create_classuser<T: ClassUser>(
     key: &String,

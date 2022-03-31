@@ -12,7 +12,7 @@ use crate::utils::generate_random_id;
 pub struct Classroom {
     pub class_id: String,
     pub class_name: String,
-    pub class_creator: String,
+    pub class_creator: Option<String>,
     pub class_description: Option<String>,
     pub class_image: Option<String>,
     pub section: String,
@@ -23,7 +23,6 @@ pub struct Classroom {
 pub struct NewClassroom {
     pub class_name: String,
     pub section: String,
-    pub class_creator: String,
     pub class_description: Option<String>,
     pub class_image: Option<String>,
 }
@@ -46,14 +45,14 @@ pub struct NewTopic {
 }
 
 impl Classroom {
-    pub fn create(class: NewClassroom, connection: &PgConnection) -> QueryResult<Self> {
+    pub fn create(class: NewClassroom, user_id: &String, connection: &PgConnection) -> QueryResult<Self> {
         let codes = get_class_codes(connection)?;
         let generate_code = generate_class_code(&codes);
         let new_class = Self {
             class_id: generate_code,
             class_name: class.class_name,
             section: class.section,
-            class_creator: class.class_creator,
+            class_creator: Some(user_id.to_string()),
             class_description: class.class_description,
             class_image: class.class_image,
         };

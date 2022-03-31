@@ -40,7 +40,7 @@ impl fmt::Display for Role {
     }
 }
 
-#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, FromForm)]
+#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, FromForm, Clone)]
 #[table_name = "users"]
 pub struct User {
     pub user_id: String,
