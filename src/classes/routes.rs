@@ -21,7 +21,8 @@ use crate::schema::teachers::user_id as teacher_id;
 use crate::schema::students::class_id as class_id_students;
 use crate::schema::teachers::class_id as class_id_teachers;
 use crate::schema::users;
-use crate::users::models::{Admin, ClassUser, Role, Student, Teacher, User};
+use crate::traits::{ClassUser, Manipulable};
+use crate::users::models::{Admin, Role, Student, Teacher, User};
 
 #[post("/", data = "<new_class>", rank = 1)]
 pub fn create_classroom(
@@ -35,7 +36,7 @@ pub fn create_classroom(
     if let Ok(r) = User::get_role(&key.0, &connection) {
         match r {
             Role::Student => Err(Status::Forbidden),
-            Role::Teacher => match Classroom::create(new_class.into_inner(), &user.user_id, &connection) {
+            Role::Teacher => match Classroom::create(new_class.into_inner(), &connection) {
                 Ok(id) => {
                     Teacher::create(&key.0, &id.class_id, &connection).unwrap();
 
@@ -43,7 +44,7 @@ pub fn create_classroom(
                 }
                 Err(e) => Err(Status::InternalServerError),
             },
-            Role::Admin => match Classroom::create(new_class.into_inner(), &user.user_id, &connection) {
+            Role::Admin => match Classroom::create(new_class.into_inner(), &connection) {
                 Ok(id) => {
                     Admin::create(&key.0, &id.class_id, &connection).unwrap();
 

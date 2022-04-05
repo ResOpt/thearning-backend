@@ -11,6 +11,7 @@ use crate::schema::admins;
 use crate::schema::students;
 use crate::schema::teachers;
 use crate::schema::users;
+use crate::traits::{Manipulable, ClassUser};
 use crate::utils::generate_random_id;
 
 pub enum Role {
@@ -98,19 +99,6 @@ pub struct Admin {
 }
 
 impl User {
-    pub fn create(user: Self, connection: &PgConnection) -> QueryResult<Self> {
-        let hashed = Self {
-            password: hash(user.password, DEFAULT_COST).unwrap(),
-            ..user
-        };
-        diesel::insert_into(users::table)
-            .values(&hashed)
-            .execute(connection)?;
-
-        users::table
-            .find(hashed.user_id)
-            .get_result::<Self>(connection)
-    }
 
     pub fn find_user(uid: &String, connection: &PgConnection) -> QueryResult<Self> {
         users::table.find(uid).get_result::<Self>(connection)
@@ -157,10 +145,32 @@ impl User {
     }
 }
 
-pub trait ClassUser {
-    fn create(uid: &String, class_id: &String, connection: &PgConnection) -> QueryResult<Self>
-        where
-            Self: Sized;
+impl Manipulable<Self> for User {
+    fn create(new_data: Self, conn: &PgConnection) -> QueryResult<Self> {
+        let hashed = Self {
+            password: hash(new_data.password, DEFAULT_COST).unwrap(),
+            ..new_data
+        };
+        diesel::insert_into(users::table)
+            .values(&hashed)
+            .execute(conn)?;
+
+        users::table
+            .find(hashed.user_id)
+            .get_result::<Self>(conn)
+    }
+
+    fn update(&self, update: Self, conn: &PgConnection) -> QueryResult<Self> {
+        todo!()
+    }
+
+    fn delete(&self, conn: &PgConnection) -> QueryResult<Self> {
+        todo!()
+    }
+
+    fn get_all(conn: &PgConnection) -> QueryResult<Self> {
+        todo!()
+    }
 }
 
 macro_rules! impl_classuser {

@@ -32,6 +32,7 @@ mod submissions;
 mod tests;
 mod utils;
 mod catchers;
+mod traits;
 
 const MEDIA_URL: &str = "media";
 

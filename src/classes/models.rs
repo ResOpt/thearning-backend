@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::classes::utils::*;
 use crate::schema::{classes, topics};
+use crate::traits::Manipulable;
 use crate::utils::generate_random_id;
 
 #[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations)]
@@ -18,11 +19,12 @@ pub struct Classroom {
     pub section: String,
 }
 
-#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable)]
+#[derive(Serialize, Deserialize, Queryable, AsChangeset)]
 #[table_name = "classes"]
 pub struct NewClassroom {
     pub class_name: String,
     pub section: String,
+    pub class_creator: String,
     pub class_description: Option<String>,
     pub class_image: Option<String>,
 }
@@ -44,25 +46,37 @@ pub struct NewTopic {
     pub classroom_id: String,
 }
 
-impl Classroom {
-    pub fn create(class: NewClassroom, user_id: &String, connection: &PgConnection) -> QueryResult<Self> {
-        let codes = get_class_codes(connection)?;
+impl Manipulable<NewClassroom> for Classroom {
+    fn create(class: NewClassroom, conn: &PgConnection) -> QueryResult<Self> {
+        let codes = get_class_codes(conn)?;
         let generate_code = generate_class_code(&codes);
         let new_class = Self {
             class_id: generate_code,
             class_name: class.class_name,
             section: class.section,
-            class_creator: Some(user_id.to_string()),
+            class_creator: Some(class.class_creator),
             class_description: class.class_description,
             class_image: class.class_image,
         };
         diesel::insert_into(classes::table)
             .values(&new_class)
-            .execute(connection)?;
+            .execute(conn)?;
 
         classes::table
             .find(new_class.class_id)
-            .get_result::<Self>(connection)
+            .get_result::<Self>(conn)
+    }
+
+    fn update(&self, update: NewClassroom, conn: &PgConnection) -> QueryResult<Self> {
+        todo!()
+    }
+
+    fn delete(&self, conn: &PgConnection) -> QueryResult<Self> {
+        todo!()
+    }
+
+    fn get_all(conn: &PgConnection) -> QueryResult<Self> {
+        todo!()
     }
 }
 

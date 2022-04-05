@@ -19,23 +19,24 @@ use crate::schema::users::dsl::users;
 use crate::schema::users::{email, profile_photo, user_id};
 use crate::users::models::{InsertableUser, Role, User};
 use crate::users::utils::is_email;
+use crate::traits::Manipulable;
 
 #[post("/", data = "<user>")]
 async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
-    let mut _user = user.into_inner();
-    match Role::from_str(&_user.status) {
+    let mut user = user.into_inner();
+    match Role::from_str(&user.status) {
         Ok(_) => {}
         Err(_) => return Err(Status::Conflict),
     }
 
     let new_user = User {
-        user_id: _user.user_id.to_string(),
-        fullname: _user.fullname.to_string(),
+        user_id: user.user_id.to_string(),
+        fullname: user.fullname.to_string(),
         profile_photo: "".to_string(),
-        email: _user.email.to_string(),
-        password: _user.password.to_string(),
-        bio: _user.bio.to_string(),
-        status: _user.status.to_string(),
+        email: user.email.to_string(),
+        password: user.password.to_string(),
+        bio: user.bio.to_string(),
+        status: user.status.to_string(),
     };
 
     let cloned_user = new_user.clone();
@@ -47,9 +48,9 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
         },
     }
 
-    let image_file = match &_user.image.name() {
+    let image_file = match &user.image.name() {
         Some(_) => {
-            match routes::process_image(_user.image, &_user.file_name).await {
+            match routes::process_image(user.image, &user.file_name).await {
                 Ok(v) => v,
                 Err(_) => return Err(Status::BadRequest)
             }

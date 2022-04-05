@@ -18,7 +18,8 @@ mod tests {
     use crate::schema::teachers::dsl::teachers as teachers_object;
     use crate::schema::users;
     use crate::schema::users::dsl::users as users_object;
-    use crate::users::models::{ClassUser, Student};
+    use crate::traits::ClassUser;
+    use crate::users::models::Student;
 
     use self::diesel::prelude::*;
 
