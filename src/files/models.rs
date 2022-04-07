@@ -1,6 +1,7 @@
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
+use rocket::fs::TempFile;
 use serde::{Deserialize, Serialize};
 
 use crate::schema::files;
@@ -10,6 +11,12 @@ pub enum FileType {
     Image,
     Document,
     PDF,
+}
+
+pub enum UploadType {
+    ProfilePhoto,
+    ClassPicture,
+    AssignmentFile,
 }
 
 impl FileType {

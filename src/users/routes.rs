@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::auth::{ApiKey, generate_token};
 use crate::db;
-use crate::files::models::UploadedFile;
+use crate::files::models::{UploadedFile, UploadType};
 use crate::files::routes;
 use crate::schema::files::dsl::files;
 use crate::schema::files::{file_path, file_url};
@@ -50,7 +50,7 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
 
     let image_file = match &user.image.name() {
         Some(_) => {
-            match routes::process_image(user.image, &user.file_name).await {
+            match routes::process_image(user.image, UploadType::ProfilePhoto,&user.file_name).await {
                 Ok(v) => v,
                 Err(_) => return Err(Status::BadRequest)
             }

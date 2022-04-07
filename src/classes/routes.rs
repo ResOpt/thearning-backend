@@ -1,6 +1,8 @@
+use std::env;
 use diesel::{QueryDsl, RunQueryDsl};
 use diesel::prelude::*;
 use rocket::{self, routes};
+use rocket::form::Form;
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::serde::json::serde_json::json;
@@ -8,9 +10,11 @@ use rocket_dyn_templates::handlebars::JsonValue;
 
 use crate::auth::ApiKey;
 use crate::classes::models::{Classroom, NewClassroom, NewTopic, Topic};
-use crate::classes::utils::get_class_codes;
+use crate::classes::utils::{generate_class_code, get_class_codes};
 use crate::db;
 use crate::db::DbConn;
+use crate::files::models::UploadType;
+use crate::files::routes;
 use crate::schema::admins::dsl::admins;
 use crate::schema::admins::user_id as admin_id;
 use crate::schema::classes::dsl::classes as class_q;
@@ -23,39 +27,70 @@ use crate::schema::teachers::class_id as class_id_teachers;
 use crate::schema::users;
 use crate::traits::{ClassUser, Manipulable};
 use crate::users::models::{Admin, Role, Student, Teacher, User};
+use crate::utils::update;
 
 #[post("/", data = "<new_class>", rank = 1)]
-pub fn create_classroom(
+async fn create_classroom<'a>(
     key: ApiKey,
-    new_class: Json<NewClassroom>,
+    new_class: Form<NewClassroom<'a>>,
     connection: db::DbConn,
 ) -> Result<Json<JsonValue>, Status> {
 
     let user = User::find_user(&key.0, &*connection).unwrap();
 
-    if let Ok(r) = User::get_role(&key.0, &connection) {
-        match r {
-            Role::Student => Err(Status::Forbidden),
-            Role::Teacher => match Classroom::create(new_class.into_inner(), &connection) {
-                Ok(id) => {
-                    Teacher::create(&key.0, &id.class_id, &connection).unwrap();
-
-                    Ok(Json(json!({ "success": true, "class_id":  &id.class_id})))
-                }
-                Err(e) => Err(Status::InternalServerError),
-            },
-            Role::Admin => match Classroom::create(new_class.into_inner(), &connection) {
-                Ok(id) => {
-                    Admin::create(&key.0, &id.class_id, &connection).unwrap();
-
-                    Ok(Json(json!({ "success": true, "class_id":  id.class_id})))
-                },
-                Err(e) => Err(Status::InternalServerError),
-            },
-        }
-    } else {
-        Err(Status::Forbidden)
+    match Role::from_str(&user.status).unwrap() {
+        Role::Student => return Err(Status::Forbidden),
+        _ => {}
     }
+
+    let new_class = new_class.into_inner();
+
+    let codes = get_class_codes(&*connection).unwrap();
+    let generate_code = generate_class_code(&codes);
+
+    let class = Classroom {
+        class_id: generate_code,
+        class_name: new_class.class_name,
+        class_creator: new_class.class_creator,
+        class_description: new_class.class_description,
+        class_image: None,
+        section: new_class.section
+    };
+
+    match Classroom::create(class.clone(), &connection) {
+        Ok(_) => {},
+        Err(_) => return Err(Status::BadRequest),
+    }
+
+    match Role::from_str(user.status.as_str()).unwrap() {
+        Role::Teacher => {
+            create_classuser::<Teacher>(&key.0, &class.class_id, &connection);
+        }
+        Role::Admin => {
+            create_classuser::<Admin>(&key.0, &class.class_id, &connection);
+        }
+        _ => {}
+    }
+
+    let image_file = match new_class.image {
+        Some(img) => match routes::process_image(img, UploadType::ClassPicture,&new_class.file_name.unwrap()).await {
+            Ok(v) => v,
+            Err(_) => return Err(Status::BadRequest)
+        }
+        None => {
+            let url = env::var("SITE_URL").unwrap();
+            format!("{}/api/media/img/placeholder.png", url)
+        }
+    };
+
+    let update_ = Classroom {
+        class_image: Some(image_file),
+        ..class.clone()
+    };
+
+    update(class.clone(), update_, &connection).unwrap();
+
+    Ok(Json(json!({"class":class.class_id})))
 }
 
 fn create_classuser<T: ClassUser>(

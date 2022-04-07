@@ -143,6 +143,14 @@ impl User {
             Err(e) => Err("User does not exist".to_string()),
         }
     }
+
+    pub fn is_admin(&self) -> bool {
+        self.status == "admin"
+    }
+
+    pub fn is_teacher(&self) -> bool {
+        self.status == "teacher"
+    }
 }
 
 impl Manipulable<Self> for User {
