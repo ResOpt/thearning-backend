@@ -32,7 +32,6 @@ mod tests {
     #[derive(Deserialize)]
     struct ClassId {
         class_id: String,
-        success: bool,
     }
 
     #[derive(Deserialize)]
@@ -162,15 +161,7 @@ mod tests {
 
         let read = read_token(&r.0.token).unwrap();
 
-        let string = format!(
-            r#"{{"class_name": "Test Class",
-               "class_creator": "{}",
-               "class_description": "Just a test class",
-               "class_image":null,
-               "section":"testing class"
-              }}"#,
-            read
-        );
+        let string = format!("class_name=Test Class&class_creator={}&class_description=Just a Test Class&section=Testing Class", read);
 
         let client = client();
 
@@ -178,7 +169,7 @@ mod tests {
         let mut response_classroom = client
             .post("/api/classroom")
             .header(Header::new("Authentication", r.1.token))
-            .header(ContentType::JSON)
+            .header(ContentType::Form)
             .body(string)
             .dispatch();
 
@@ -186,7 +177,7 @@ mod tests {
         let r = response_classroom.into_json::<ClassId>().unwrap();
 
         // Is it success?
-        assert_eq!(r.success, true);
+        assert_eq!(!r.class_id.is_empty(), true);
     }
 
     #[test]

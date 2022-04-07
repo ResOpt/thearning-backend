@@ -90,7 +90,7 @@ async fn create_classroom<'a>(
 
     update(class.clone(), update_, &connection).unwrap();
 
-    Ok(Json(json!({"class":class.class_id})))
+    Ok(Json(json!({"class_id":class.class_id})))
 }
 
 fn create_classuser<T: ClassUser>(
