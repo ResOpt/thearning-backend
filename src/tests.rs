@@ -89,9 +89,9 @@ mod tests {
 
     #[test]
     fn t_1_create_user() {
-        let string = "user_id=123&fullname=Dummy Student&image=0/placeholder.png&file_name=placeholder.png&email=dummystudent@mail.com&password=dummy&bio=Dummy&status=student";
+        let string = "user_id=123&fullname=Dummy Student&image=0/placeholder.png&file_name=placeholder.png&email=dummystudent@mail.com&password=dummy&bio=Dummy&status=student&birth_place=Indonesia&birth_date=2005-01-01";
 
-        let string_2 = "user_id=234&fullname=Dummy Teacher&image=0&file_name=placeholder.png&email=dummyteacher@mail.com&password=dummy&bio=Dummy&status=teacher";
+        let string_2 = "user_id=234&fullname=Dummy Teacher&image=0&file_name=placeholder.png&email=dummyteacher@mail.com&password=dummy&bio=Dummy&status=teacher&birth_place=Indonesia&birth_date=1990-01-01";
 
         // Construct the client
         let client = client();

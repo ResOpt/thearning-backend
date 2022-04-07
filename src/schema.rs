@@ -94,6 +94,8 @@ table! {
         profile_photo -> Varchar,
         email -> Varchar,
         password -> Varchar,
+        birth_place -> Varchar,
+        birth_date -> Date,
         bio -> Text,
         status -> Varchar,
     }

@@ -35,6 +35,8 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
         profile_photo: "".to_string(),
         email: user.email.to_string(),
         password: user.password.to_string(),
+        birth_place: user.birth_place,
+        birth_date: *user.birth_date,
         bio: user.bio.to_string(),
         status: user.status.to_string(),
     };

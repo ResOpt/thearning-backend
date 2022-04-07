@@ -1,6 +1,7 @@
 use std::fmt;
 
 use bcrypt::{DEFAULT_COST, hash, verify};
+use chrono::{NaiveDate, NaiveDateTime};
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
@@ -12,7 +13,7 @@ use crate::schema::students;
 use crate::schema::teachers;
 use crate::schema::users;
 use crate::traits::{Manipulable, ClassUser};
-use crate::utils::generate_random_id;
+use crate::utils::{generate_random_id, NaiveDateForm};
 
 pub enum Role {
     Student,
@@ -41,7 +42,7 @@ impl fmt::Display for Role {
     }
 }
 
-#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, FromForm, Clone)]
+#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Clone)]
 #[table_name = "users"]
 pub struct User {
     pub user_id: String,
@@ -49,6 +50,8 @@ pub struct User {
     pub profile_photo: String,
     pub email: String,
     pub password: String,
+    pub birth_place: String,
+    pub birth_date: NaiveDate,
     pub bio: String,
     pub status: String,
 }
@@ -59,6 +62,8 @@ pub struct InsertableUser<'a> {
     pub fullname: String,
     pub email: String,
     pub password: String,
+    pub birth_place: String,
+    pub birth_date: NaiveDateForm,
     pub bio: String,
     pub status: String,
     pub image: TempFile<'a>,
@@ -169,7 +174,15 @@ impl Manipulable<Self> for User {
     }
 
     fn update(&self, update: Self, conn: &PgConnection) -> QueryResult<Self> {
-        todo!()
+        diesel::update(users::table.filter(users::user_id.eq(&self.user_id)))
+            .set((users::fullname.eq(&update.fullname),
+                  users::profile_photo.eq(&update.profile_photo),
+                  users::email.eq(&update.email),
+                  users::bio.eq(&update.bio),
+                  users::birth_place.eq(&update.birth_place),
+                  users::birth_date.eq(&update.birth_date))).execute(conn)?;
+
+        users::dsl::users.find(&self.user_id).get_result::<Self>(conn)
     }
 
     fn delete(&self, conn: &PgConnection) -> QueryResult<Self> {

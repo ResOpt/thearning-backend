@@ -4,6 +4,8 @@ CREATE TABLE users(
                       profile_photo VARCHAR NOT NULL,
                       email VARCHAR UNIQUE NOT NULL,
                       password VARCHAR NOT NULL,
+                      birth_place VARCHAR NOT NULL,
+                      birth_date DATE NOT NULL,
                       bio TEXT NOT NULL,
                       status VARCHAR NOT NULL
 )
