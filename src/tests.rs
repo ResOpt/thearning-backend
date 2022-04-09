@@ -36,7 +36,7 @@ mod tests {
 
     #[derive(Deserialize)]
     struct ClassIds {
-        class_id: Vec<Classroom>,
+        class_ids: Vec<Classroom>,
     }
 
     #[derive(Deserialize)]
@@ -219,7 +219,7 @@ mod tests {
         // Deserialize it into a struct
         let r = response_1.into_json::<ClassIds>().unwrap();
 
-        let classrooms = r.class_id;
+        let classrooms = r.class_ids;
 
         // Getting a sample class id
         let sample_class = classrooms.first().unwrap();

@@ -1,5 +1,6 @@
 use std::env;
 use diesel::{QueryDsl, RunQueryDsl};
+use diesel::dsl::any;
 use diesel::prelude::*;
 use rocket::{self, routes};
 use rocket::form::Form;
@@ -15,15 +16,10 @@ use crate::db;
 use crate::db::DbConn;
 use crate::files::models::UploadType;
 use crate::files::routes;
-use crate::schema::admins::dsl::admins;
-use crate::schema::admins::user_id as admin_id;
-use crate::schema::classes::dsl::classes as class_q;
-use crate::schema::students::dsl::students;
-use crate::schema::students::user_id as student_id;
-use crate::schema::teachers::dsl::teachers;
-use crate::schema::teachers::user_id as teacher_id;
-use crate::schema::students::class_id as class_id_students;
-use crate::schema::teachers::class_id as class_id_teachers;
+use crate::schema::classes;
+use crate::schema::students;
+use crate::schema::teachers;
+use crate::schema::admins;
 use crate::schema::users;
 use crate::traits::{ClassUser, Manipulable};
 use crate::users::models::{Admin, Role, Student, Teacher, User};
@@ -131,55 +127,52 @@ fn classrooms(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, St
     let user = users::table.find(&key.0).get_result::<User>(&*connection);
     match Role::from_str(user.as_ref().unwrap().status.as_str()).unwrap() {
         Role::Student => {
-            let student = students
-                .filter(student_id.eq(user.unwrap().user_id))
+            let student = students::table
+                .filter(students::user_id.eq(user.unwrap().user_id))
                 .load::<Student>(&*connection)
                 .unwrap();
 
-            let mut c: Vec<Classroom> = Vec::new();
-            for i in student {
-                let class = class_q
-                    .find(i.class_id)
-                    .get_result::<Classroom>(&*connection)
-                    .unwrap();
-                c.push(class);
-            }
+            let students_class_ids = student.into_iter()
+                .map(|i| i.class_id).collect::<Vec<_>>();
 
-            Ok(Json(json!({ "class_id": c })))
+            let students_classes = classes::table
+                .filter(classes::class_id.eq(any(students_class_ids)))
+                .load::<Classroom>(&*connection)
+                .unwrap();
+
+            Ok(Json(json!({ "class_ids": students_classes })))
         }
         Role::Teacher => {
-            let teacher = teachers
-                .filter(teacher_id.eq(user.unwrap().user_id))
+            let teacher = teachers::table
+                .filter(teachers::user_id.eq(user.unwrap().user_id))
                 .load::<Teacher>(&*connection)
                 .unwrap();
 
-            let mut c: Vec<Classroom> = Vec::new();
-            for i in teacher {
-                let class = class_q
-                    .find(i.class_id)
-                    .get_result::<Classroom>(&*connection)
-                    .unwrap();
-                c.push(class);
-            }
+            let teachers_class_ids = teacher.into_iter()
+                .map(|i| i.class_id).collect::<Vec<_>>();
 
-            Ok(Json(json!({ "class_id": c })))
+            let teachers_classes = classes::table
+                .filter(classes::class_id.eq(any(teachers_class_ids)))
+                .load::<Classroom>(&*connection)
+                .unwrap();
+
+            Ok(Json(json!({ "class_ids": teachers_classes })))
         }
         Role::Admin => {
-            let admin = admins
-                .filter(admin_id.eq(user.unwrap().user_id))
+            let admin = admins::table
+                .filter(admins::user_id.eq(user.unwrap().user_id))
                 .load::<Admin>(&*connection)
                 .unwrap();
 
-            let mut c: Vec<Classroom> = Vec::new();
-            for i in admin {
-                let class = class_q
-                    .find(i.class_id)
-                    .get_result::<Classroom>(&*connection)
-                    .unwrap();
-                c.push(class);
-            }
+            let admins_class_ids = admin.into_iter()
+                .map(|i| i.class_id).collect::<Vec<_>>();
 
-            Ok(Json(json!({ "class_id": c })))
+            let admins_classes = classes::table
+                .filter(classes::class_id.eq(any(admins_class_ids)))
+                .load::<Classroom>(&*connection)
+                .unwrap();
+
+            Ok(Json(json!({ "class_ids": admins_classes })))
         }
     }
 }
@@ -207,13 +200,13 @@ fn topic(key: ApiKey, new_topic: Json<NewTopic>, connection: db::DbConn) -> Resu
 
 #[get("/<class_id>", rank = 2)]
 fn class(key: ApiKey, class_id: String, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
-    let students_ = students
-        .filter(class_id_students.eq(&class_id))
+    let students_ = students::table
+        .filter(students::class_id.eq(&class_id))
         .load::<Student>(&*connection)
         .unwrap().into_iter().collect::<Vec<Student>>();
 
-    let teachers_ = teachers
-        .filter(class_id_teachers.eq(&class_id))
+    let teachers_ = teachers::table
+        .filter(teachers::class_id.eq(&class_id))
         .load::<Teacher>(&*connection)
         .unwrap().into_iter().collect::<Vec<Teacher>>();
 

@@ -225,11 +225,11 @@ impl Manipulable<Self> for User {
     }
 
     fn delete(&self, conn: &PgConnection) -> QueryResult<Self> {
-        todo!()
+        diesel::delete(users::table.find(&self.user_id)).get_result::<Self>(conn)
     }
 
-    fn get_all(conn: &PgConnection) -> QueryResult<Self> {
-        todo!()
+    fn get_all(conn: &PgConnection) -> QueryResult<Vec<Self>> {
+        users::table.load::<Self>(conn)
     }
 }
 

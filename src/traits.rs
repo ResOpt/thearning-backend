@@ -10,7 +10,7 @@ where
 
     fn delete(&self, conn: &PgConnection) -> QueryResult<Self>;
 
-    fn get_all(conn: &PgConnection) -> QueryResult<Self>;
+    fn get_all(conn: &PgConnection) -> QueryResult<Vec<Self>>;
 }
 
 pub trait ClassUser {

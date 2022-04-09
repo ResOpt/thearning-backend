@@ -82,7 +82,7 @@ impl Manipulable<Self> for Classroom {
         todo!()
     }
 
-    fn get_all(conn: &PgConnection) -> QueryResult<Self> {
+    fn get_all(conn: &PgConnection) -> QueryResult<Vec<Self>> {
         todo!()
     }
 }
