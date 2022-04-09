@@ -73,7 +73,7 @@ async fn create_classroom<'a>(
     }
 
     let image_file = match new_class.image {
-        Some(img) => match routes::process_image(img, UploadType::ClassPicture,&new_class.file_name.unwrap()).await {
+        Some(img) => match routes::process_image(img, UploadType::ClassPicture,&new_class.file_name.unwrap_or("filename.jpg".to_string())).await {
             Ok(v) => v,
             Err(_) => return Err(Status::BadRequest)
         }

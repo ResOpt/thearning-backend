@@ -1,6 +1,7 @@
 use std::{env, fs};
 use std::path::Path;
 use diesel::{EqAll, QueryDsl, RunQueryDsl};
+use dotenv::var;
 use jsonwebtoken::{Algorithm, Header};
 use rocket::form::Form;
 use rocket::http::Status;
@@ -11,15 +12,17 @@ use serde::{Deserialize, Serialize};
 
 use crate::auth::{ApiKey, generate_token};
 use crate::db;
+use crate::file_routes::process_image;
 use crate::files::models::{UploadedFile, UploadType};
 use crate::files::routes;
 use crate::schema::files::dsl::files;
 use crate::schema::files::{file_path, file_url};
 use crate::schema::users::dsl::users;
 use crate::schema::users::{email, profile_photo, user_id};
-use crate::users::models::{InsertableUser, Role, User};
+use crate::users::models::{InsertableUser, PasswordChange, Role, UpdatableUser, User};
 use crate::users::utils::is_email;
 use crate::traits::Manipulable;
+use crate::utils::update;
 
 #[post("/", data = "<user>")]
 async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
@@ -50,9 +53,9 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
         },
     }
 
-    let image_file = match &user.image.name() {
-        Some(_) => {
-            match routes::process_image(user.image, UploadType::ProfilePhoto,&user.file_name).await {
+    let image_file = match user.image {
+        Some(img) => {
+            match routes::process_image(img, UploadType::ProfilePhoto, &user.file_name.unwrap_or("file.jpg".to_string())).await {
                 Ok(v) => v,
                 Err(_) => return Err(Status::BadRequest)
             }
@@ -127,6 +130,72 @@ fn login(
     }
 }
 
+#[post("/update", data = "<data>")]
+async fn update_user<'a>(key: ApiKey, data: Form<UpdatableUser<'a>>, conn: db::DbConn) -> Result<Status, Status> {
+    let data = data.into_inner();
+
+    let user = match User::find_user(&key.0, &conn) {
+        Ok(u) => u,
+        Err(_) => return Err(Status::NotFound),
+    };
+
+    let cloned_user = user.clone();
+
+    let image: Option<String> = match data.image {
+        Some(i) => {
+            match process_image(i, UploadType::ProfilePhoto,&data.file_name.unwrap_or("filename.jpg".to_string())).await {
+                Ok(res) => {
+                    let old_file = UploadedFile::get_from_url(&cloned_user.profile_photo, &conn).unwrap();
+                    fs::remove_file(old_file.file_path).unwrap();
+
+                    Some(res)
+                },
+                Err(_) => return Err(Status::BadRequest)
+            }
+        }
+        None => None,
+    };
+
+    let updated_user = User {
+        user_id: key.0,
+
+        fullname: data.fullname,
+        profile_photo: match image {
+            Some(i) => i,
+            None => cloned_user.profile_photo
+        },
+        email: data.email,
+        password: cloned_user.password,
+        birth_place: data.birth_place,
+        birth_date: *data.birth_date,
+        bio: data.bio,
+        status: cloned_user.status,
+    };
+
+    match update(user, updated_user, &conn) {
+        Ok(_) => {},
+        Err(_) => return Err(Status::UnprocessableEntity)
+    };
+
+    Ok(Status::Ok)
+}
+
+#[post("/password_change", format = "application/json", data = "<data>")]
+fn password_change(key: ApiKey, data: Json<PasswordChange>, conn: db::DbConn) -> Result<Status, Status> {
+
+    let data = data.into_inner();
+
+    let user = match User::find_user(&key.0, &conn) {
+        Ok(v) => v,
+        Err(_) => return Err(Status::NotFound)
+    };
+
+    match user.update_password(data, &conn) {
+        Ok(_) => Ok(Status::Ok),
+        Err(_) => Err(Status::Unauthorized)
+    }
+}
+
 #[get("/", format = "application/json")]
 fn info(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
     match User::find_user(&key.0, &connection) {
@@ -147,6 +216,6 @@ fn info(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, Status> 
 
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     rocket
-        .mount("/api/user", routes![create, info, delete_user])
+        .mount("/api/user", routes![create, info, delete_user, password_change, update_user])
         .mount("/api/auth", routes![login])
 }

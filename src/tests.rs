@@ -253,7 +253,39 @@ mod tests {
     }
 
     #[test]
-    fn t_7_delete_all() {
+    fn t_7_update_user() {
+        let db_conn = PgConnection::establish(&database_url()).unwrap();
+
+        let auth = auth_request();
+
+        let auth_2 = auth_request();
+
+        let string = "fullname=Dummy Student Edited&email=dummystudentedited@mail.com&bio=This user is edited&status=student&birth_place=Indonesia&birth_date=2005-01-01";
+
+        let client = client();
+
+        let response = client
+            .post("/api/user/update")
+            .header(Header::new("Authentication", auth.0.token))
+            .header(ContentType::Form)
+            .body(string)
+            .dispatch();
+
+        assert_eq!(response.status(), Status::Ok);
+
+        let mut get_request = client
+            .get("/api/user")
+            .header(Header::new("Authentication", auth_2.0.token))
+            .dispatch();
+
+        let r = get_request.into_json::<UserDataResponse>().unwrap();
+
+        assert_eq!(r.status, 200);
+        assert_eq!(r.data.fullname, "Dummy Student Edited");
+    }
+
+    #[test]
+    fn t_8_delete_all() {
         // Database connection
         let db_conn = PgConnection::establish(&database_url()).unwrap();
 
@@ -279,7 +311,7 @@ mod tests {
             diesel::delete(users_object.filter(users::user_id.eq("234"))).execute(&db_conn);
 
         // Are the rows deleted?
-        assert_eq!(Ok(0), delete_all_files);
+        assert_eq!(Ok(2), delete_all_files);
         assert_eq!(Ok(1), delete_all_assignments);
         assert_eq!(Ok(1), delete_all_students);
         assert_eq!(Ok(1), delete_all_teachers);

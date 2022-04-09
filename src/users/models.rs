@@ -66,8 +66,26 @@ pub struct InsertableUser<'a> {
     pub birth_date: NaiveDateForm,
     pub bio: String,
     pub status: String,
-    pub image: TempFile<'a>,
-    pub file_name: String,
+    pub image: Option<TempFile<'a>>,
+    pub file_name: Option<String>,
+}
+
+#[derive(FromForm)]
+pub struct UpdatableUser<'a> {
+    pub fullname: String,
+    pub email: String,
+    pub birth_place: String,
+    pub birth_date: NaiveDateForm,
+    pub bio: String,
+    pub image: Option<TempFile<'a>>,
+    pub file_name: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct PasswordChange<'a> {
+    pub user_id: &'a str,
+    pub password: &'a str,
+    pub new_password: &'a str,
 }
 
 #[derive(
@@ -146,6 +164,27 @@ impl User {
         match res {
             Ok(user) => Ok(user.user_id),
             Err(e) => Err("User does not exist".to_string()),
+        }
+    }
+
+    pub fn update_password(&self, data: PasswordChange, conn: &PgConnection) -> Result<(), ()> {
+        let new_hashed = hash(&data.new_password, DEFAULT_COST).unwrap();
+
+        match verify(&data.password, &self.password) {
+            Ok(matching) => {
+                if matching {
+                    diesel::update(users::table.filter(users::user_id.eq(&self.user_id)))
+                        .set(users::password.eq(&new_hashed))
+                        .execute(conn).unwrap();
+                    Ok(())
+                }
+                else {
+                    Err(())
+                }
+            }
+            Err(_) => {
+                return Err(())
+            }
         }
     }
 

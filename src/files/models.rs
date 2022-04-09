@@ -61,4 +61,8 @@ impl UploadedFile {
     pub fn receive(file_id: &String, conn: &PgConnection) -> QueryResult<Self> {
         files::table.find(file_id).get_result::<Self>(conn)
     }
+
+    pub fn get_from_url(url: &String, conn: &PgConnection) -> QueryResult<Self> {
+        files::table.filter(files::file_url.eq(url)).get_result::<Self>(conn)
+    }
 }
