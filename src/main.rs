@@ -33,6 +33,7 @@ mod tests;
 mod utils;
 mod catchers;
 mod traits;
+mod pagination;
 
 const MEDIA_URL: &str = "media";
 

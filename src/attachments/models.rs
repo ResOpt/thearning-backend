@@ -1,3 +1,4 @@
+use chrono::{Local, NaiveDateTime};
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
@@ -9,19 +10,12 @@ use crate::utils::generate_random_id;
 #[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations)]
 #[table_name = "attachments"]
 pub struct Attachment {
-    attachment_id: String,
-    file_id: String,
-    assignment_id: Option<String>,
-    uploader: String,
-}
-
-#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations)]
-#[table_name = "attachments"]
-pub struct AttachmentResult {
-    attachment_id: String,
-    file_id: String,
-    assignment_id: String,
-    uploader: String,
+    pub attachment_id: String,
+    pub file_id: String,
+    pub assignment_id: Option<String>,
+    pub announcement_id: Option<String>,
+    pub uploader: String,
+    pub created_at: NaiveDateTime,
 }
 
 impl Attachment {
@@ -30,7 +24,7 @@ impl Attachment {
         assignment_id: &Option<&String>,
         uploader: &String,
         conn: &PgConnection,
-    ) -> QueryResult<AttachmentResult> {
+    ) -> QueryResult<Self> {
         let new_attachment = Self {
             attachment_id: generate_random_id().to_string(),
             file_id: file_id.to_string(),
@@ -38,7 +32,9 @@ impl Attachment {
                 Some(s) => Some(s.to_string()),
                 None => None,
             },
+            announcement_id: None,
             uploader: uploader.to_string(),
+            created_at: Local::now().naive_local()
         };
 
         diesel::insert_into(attachments::table)
@@ -47,6 +43,6 @@ impl Attachment {
 
         attachments::table
             .find(new_attachment.attachment_id)
-            .get_result::<AttachmentResult>(conn)
+            .get_result::<Self>(conn)
     }
 }

@@ -1,5 +1,6 @@
 use std::{env, fs};
 use std::path::Path;
+use chrono::Local;
 use diesel::{EqAll, QueryDsl, RunQueryDsl};
 use dotenv::var;
 use jsonwebtoken::{Algorithm, Header};
@@ -42,6 +43,7 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
         birth_date: *user.birth_date,
         bio: user.bio.to_string(),
         status: user.status.to_string(),
+        created_at: Local::now().naive_local()
     };
 
     let cloned_user = new_user.clone();
@@ -170,6 +172,7 @@ async fn update_user<'a>(key: ApiKey, data: Form<UpdatableUser<'a>>, conn: db::D
         birth_date: *data.birth_date,
         bio: data.bio,
         status: cloned_user.status,
+        created_at: Local::now().naive_local()
     };
 
     match update(user, updated_user, &conn) {
@@ -208,6 +211,7 @@ fn info(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, Status> 
             "email": user.email,
             "bio": user.bio,
             "status": user.status,
+            "created_at": user.created_at,
                 }
         }))),
         Err(_) => Err(Status::NotFound),

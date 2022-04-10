@@ -1,7 +1,7 @@
 use std::fmt;
 
 use bcrypt::{DEFAULT_COST, hash, verify};
-use chrono::{NaiveDate, NaiveDateTime};
+use chrono::{NaiveDate, NaiveDateTime, Local};
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
@@ -54,6 +54,7 @@ pub struct User {
     pub birth_date: NaiveDate,
     pub bio: String,
     pub status: String,
+    pub created_at: NaiveDateTime
 }
 
 #[derive(FromForm)]
@@ -97,6 +98,7 @@ pub struct Student {
     pub id: i32,
     pub user_id: String,
     pub class_id: String,
+    pub created_at: NaiveDateTime,
 }
 
 #[derive(
@@ -108,6 +110,7 @@ pub struct Teacher {
     pub id: i32,
     pub user_id: String,
     pub class_id: String,
+    pub created_at: NaiveDateTime,
 }
 
 #[derive(
@@ -119,6 +122,7 @@ pub struct Admin {
     pub id: i32,
     pub user_id: String,
     pub class_id: String,
+    pub created_at: NaiveDateTime,
 }
 
 impl User {
@@ -245,6 +249,7 @@ macro_rules! impl_classuser {
                     id: generate_random_id(),
                     user_id: uid.to_string(),
                     class_id: class_id.to_string(),
+                    created_at: Local::now().naive_local(),
                 };
                 diesel::insert_into($d::table)
                     .values(&u)

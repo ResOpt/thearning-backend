@@ -8,6 +8,7 @@ CREATE TABLE assignments(
     posted_date DATE NOT NULL,
     instructions TEXT,
     total_marks INT,
+    created_at TIMESTAMP NOT NULL,
 
     FOREIGN KEY (class_id) REFERENCES classes(class_id) ON DELETE CASCADE ,
     FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE

@@ -1,4 +1,5 @@
 use std::env;
+use chrono::{Local, NaiveDateTime};
 use diesel::{QueryDsl, RunQueryDsl};
 use diesel::dsl::any;
 use diesel::prelude::*;
@@ -50,7 +51,8 @@ async fn create_classroom<'a>(
         class_creator: new_class.class_creator,
         class_description: new_class.class_description,
         class_image: None,
-        section: new_class.section
+        section: new_class.section,
+        created_at: Local::now().naive_local(),
     };
 
     match Classroom::create(class.clone(), &connection) {

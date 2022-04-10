@@ -1,4 +1,4 @@
-use chrono::{NaiveDate, NaiveTime};
+use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime};
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
@@ -19,6 +19,7 @@ pub struct Assignments {
     pub posted_date: NaiveDate,
     pub instructions: Option<String>,
     pub total_marks: Option<i32>,
+    pub created_at: NaiveDateTime,
 }
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, Clone)]
@@ -53,6 +54,7 @@ impl Assignments {
             posted_date: NaiveDate::from(chrono::offset::Local::now().date().naive_local()),
             instructions: assignment_data.instructions,
             total_marks: Some(100),
+            created_at: Local::now().naive_local()
         };
 
         diesel::insert_into(assignments::table)

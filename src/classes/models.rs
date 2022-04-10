@@ -1,3 +1,4 @@
+use chrono::{Local, NaiveDateTime};
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
@@ -18,6 +19,7 @@ pub struct Classroom {
     pub class_description: Option<String>,
     pub class_image: Option<String>,
     pub section: String,
+    pub created_at: NaiveDateTime,
 }
 
 #[derive(FromForm)]
@@ -39,6 +41,7 @@ pub struct Topic {
     pub id: String,
     pub topic_name: String,
     pub classroom_id: String,
+    pub created_at: NaiveDateTime,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -57,6 +60,7 @@ impl Manipulable<Self> for Classroom {
             class_creator: class.class_creator,
             class_description: class.class_description,
             class_image: class.class_image,
+            created_at: Local::now().naive_local()
         };
         diesel::insert_into(classes::table)
             .values(&new_class)
@@ -95,6 +99,7 @@ impl Topic {
             id: generate_code,
             topic_name: topic.topic_name,
             classroom_id: topic.classroom_id,
+            created_at: Local::now().naive_local()
         };
 
         diesel::insert_into(topics::table)

@@ -1,4 +1,4 @@
-use chrono::{NaiveDate, NaiveTime};
+use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use serde::{Deserialize, Serialize};
 
 use crate::schema::submissions;
@@ -14,6 +14,7 @@ pub struct Submissions {
     pub on_time: bool,
     pub marks_allotted: Option<i32>,
     pub submission_file: Option<String>,
+    pub created_at: NaiveDateTime
 }
 
 pub struct FillableSubmissions {}

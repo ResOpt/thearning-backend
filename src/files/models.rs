@@ -1,3 +1,4 @@
+use chrono::{Local, NaiveDateTime};
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
@@ -39,6 +40,7 @@ pub struct UploadedFile {
     pub file_path: String,
     pub file_url: String,
     pub filetype: String,
+    pub created_at: NaiveDateTime,
 }
 
 impl UploadedFile {
@@ -49,6 +51,7 @@ impl UploadedFile {
             file_path: file_path.to_string(),
             file_url: file_url.to_string(),
             filetype: filetype.to_string(),
+            created_at: Local::now().naive_local()
         };
 
         diesel::insert_into(files::table)
