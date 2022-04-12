@@ -137,12 +137,12 @@ mod tests {
         // Sending GET method to get data with token authentication
         let mut response_data = client
             .get("/api/user")
-            .header(Header::new("Authentication", r.0.token))
+            .header(Header::new("Authorization", format!("Bearer {}", r.0.token)))
             .dispatch();
 
         let mut response_data_2 = client
             .get("/api/user")
-            .header(Header::new("Authentication", r.1.token))
+            .header(Header::new("Authorization", format!("Bearer {}", r.1.token)))
             .dispatch();
 
         // Deserializing data
@@ -168,7 +168,7 @@ mod tests {
         // Sending POST method to create a classroom
         let mut response_classroom = client
             .post("/api/classroom")
-            .header(Header::new("Authentication", r.1.token))
+            .header(Header::new("Authorization", format!("Bearer {}", r.1.token)))
             .header(ContentType::Form)
             .body(string)
             .dispatch();
@@ -213,7 +213,7 @@ mod tests {
         // Sending get request to get classrooms the user attends
         let response_1 = client
             .get("/api/classroom")
-            .header(Header::new("Authentication", token.clone()))
+            .header(Header::new("Authorization", format!("Bearer {}", token.clone())))
             .dispatch();
 
         // Deserialize it into a struct
@@ -241,7 +241,7 @@ mod tests {
         let response_2 = client
             .post("/api/classroom/assignments/create")
             .header(ContentType::JSON)
-            .header(Header::new("Authentication", token.clone()))
+            .header(Header::new("Authorization", format!("Bearer {}", token.clone())))
             .body(string)
             .dispatch();
 
@@ -266,7 +266,7 @@ mod tests {
 
         let response = client
             .post("/api/user/update")
-            .header(Header::new("Authentication", auth.0.token))
+            .header(Header::new("Authorization", format!("Bearer {}", auth.0.token)))
             .header(ContentType::Form)
             .body(string)
             .dispatch();
@@ -275,7 +275,7 @@ mod tests {
 
         let mut get_request = client
             .get("/api/user")
-            .header(Header::new("Authentication", auth_2.0.token))
+            .header(Header::new("Authorization", format!("Bearer {}", auth.0.token)))
             .dispatch();
 
         let r = get_request.into_json::<UserDataResponse>().unwrap();

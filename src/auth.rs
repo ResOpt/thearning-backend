@@ -72,11 +72,15 @@ impl<'r> FromRequest<'r> for ApiKey {
     type Error = Errors;
 
     async fn from_request(request: &'r Request<'_>) -> request::Outcome<ApiKey, Errors> {
-        let keys: Vec<_> = request.headers().get("Authentication").collect();
-        if keys.len() != 1 {
-            return request::Outcome::Failure((Status::BadRequest, Errors::TokenInvalid));
-        }
-        match read_token(keys[0]) {
+
+        let keys = match request.headers().get("Authorization").collect::<Vec<_>>().first() {
+            Some(k) => {
+                k.split("Bearer").map(|i| i.trim()).collect::<String>()
+            },
+            None => return request::Outcome::Failure((Status::BadRequest, Errors::TokenInvalid)),
+        };
+
+        match read_token(keys.as_str()) {
             Ok(claim) => request::Outcome::Success(ApiKey(claim)),
             Err(e) => request::Outcome::Failure((Status::Unauthorized, e)),
         }
