@@ -8,10 +8,13 @@ use serde::{Deserialize, Serialize};
 use crate::schema::files;
 
 pub enum FileType {
-    Video,
-    Image,
-    Document,
+    MP4,
+    MKV,
+    JPEG,
+    PNG,
     PDF,
+    WordDocument,
+    ExcelDocument,
 }
 
 pub enum UploadType {
@@ -21,18 +24,21 @@ pub enum UploadType {
 }
 
 impl FileType {
-    pub fn from_str(filetype: &str) -> Self {
+   pub fn from_str(filetype: &str) -> Self {
         match filetype {
-            "video" => Self::Video,
-            "image" => Self::Image,
-            "document" => Self::Document,
-            "pdf" => Self::PDF,
+            "video/mp4" => Self::MP4,
+            "video/x-matroska" => Self::MKV,
+            "image/jpeg" => Self::JPEG,
+            "image/png" => Self::PNG,
+            "application/pdf" => Self::PDF,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => Self::WordDocument,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => Self::ExcelDocument,
             _ => unimplemented!()
         }
     }
 }
 
-#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Clone)]
+#[derive(Serialize, Deserialize, AsChangeset, Insertable, Associations, Clone, Queryable)]
 #[table_name = "files"]
 pub struct UploadedFile {
     pub file_id: String,

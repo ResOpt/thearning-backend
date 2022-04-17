@@ -21,8 +21,8 @@ table! {
 table! {
     assignments (assignment_id) {
         assignment_id -> Varchar,
-        assignment_name -> Varchar,
-        class_id -> Varchar,
+        assignment_name -> Nullable<Varchar>,
+        class_id -> Nullable<Varchar>,
         topic_id -> Nullable<Varchar>,
         due_date -> Nullable<Date>,
         due_time -> Nullable<Time>,
@@ -30,6 +30,7 @@ table! {
         instructions -> Nullable<Text>,
         total_marks -> Nullable<Int4>,
         created_at -> Timestamp,
+        draft -> Bool,
     }
 }
 

@@ -45,6 +45,11 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct AssignmentId {
+        assignment_id: String,
+    }
+
+    #[derive(Deserialize)]
     struct UserData {
         user_id: String,
         fullname: String,
@@ -225,31 +230,30 @@ mod tests {
         let sample_class = classrooms.first().unwrap();
 
         // Data
-        let string = format!(
-            r#"{{"assignment": {{"assignment_name": "Dummy Assignment",
-                                                       "class_id": "{}",
-                                                       "due_date": null,
-                                                       "due_time": null,
-                                                       "instructions": "Do this and that"
-                                                     }},
-                                         "files": null
-                                  }}"#,
-            sample_class.class_id
-        );
+        // let string = format!(
+        //     r#"{{"assignment": {{"assignment_name": "Dummy Assignment",
+        //                                                "class_id": "{}",
+        //                                                "due_date": null,
+        //                                                "due_time": null,
+        //                                                "instructions": "Do this and that"
+        //                                              }},
+        //                                  "files": null
+        //                           }}"#,
+        //     sample_class.class_id
+        // );
 
         // Sending post request to create a new assignment
         let response_2 = client
-            .post("/api/classroom/assignments/create")
+            .post("/api/classroom/assignments")
             .header(ContentType::JSON)
             .header(Header::new("Authorization", format!("Bearer {}", token.clone())))
-            .body(string)
             .dispatch();
 
         // Deserializing the response
-        let r_2 = response_2.into_json::<SuccessOrNot>().unwrap();
+        let r_2 = response_2.into_json::<AssignmentId>().unwrap();
 
         // Was the operation successful?
-        assert_eq!(true, r_2.success)
+        assert_ne!(r_2.assignment_id, "".to_string())
     }
 
     #[test]

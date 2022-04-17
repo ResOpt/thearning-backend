@@ -2,8 +2,10 @@ use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use serde::{Deserialize, Serialize};
 
 use crate::schema::submissions;
+use crate::assignments::models::Assignment;
 
-#[derive(Serialize, Deserialize, Queryable, Insertable)]
+#[derive(Serialize, Deserialize, Queryable, Insertable, Associations)]
+#[belongs_to(Assignment)]
 #[table_name = "submissions"]
 pub struct Submissions {
     pub submission_id: String,

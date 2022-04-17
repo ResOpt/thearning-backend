@@ -2,6 +2,7 @@ use std::{env, fs};
 use std::path::Path;
 use chrono::Local;
 use diesel::{EqAll, QueryDsl, RunQueryDsl};
+use diesel::associations::HasTable;
 use dotenv::var;
 use jsonwebtoken::{Algorithm, Header};
 use rocket::form::Form;
@@ -16,9 +17,10 @@ use crate::db;
 use crate::file_routes::process_image;
 use crate::files::models::{UploadedFile, UploadType};
 use crate::files::routes;
+use crate::pagination::Paginate;
 use crate::schema::files::dsl::files;
 use crate::schema::files::{file_path, file_url};
-use crate::schema::users::dsl::users;
+use crate::schema::users;
 use crate::schema::users::{email, profile_photo, user_id};
 use crate::users::models::{InsertableUser, PasswordChange, Role, UpdatableUser, User};
 use crate::users::utils::is_email;
@@ -28,10 +30,6 @@ use crate::utils::update;
 #[post("/", data = "<user>")]
 async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
     let mut user = user.into_inner();
-    match Role::from_str(&user.status) {
-        Ok(_) => {}
-        Err(_) => return Err(Status::Conflict),
-    }
 
     let new_user = User {
         user_id: user.user_id.to_string(),
@@ -68,7 +66,7 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
         }
     };
 
-    diesel::update(users.filter(user_id.eq_all(cloned_user.user_id)))
+    diesel::update(users::dsl::users.filter(user_id.eq_all(cloned_user.user_id)))
         .set(profile_photo.eq_all(image_file))
         .execute(&*connection).unwrap();
 
@@ -80,13 +78,13 @@ fn delete_user(key: ApiKey, uid: String, conn: db::DbConn) -> Result<Json<JsonVa
 
     match User::get_role(&key.0, &*conn).unwrap() {
         Role::Admin => {
-            match diesel::delete(users.filter(user_id.eq_all(&uid)))
+            match diesel::delete(users::dsl::users.filter(user_id.eq_all(&uid)))
                 .execute(&*conn) {
                 Ok(_) => {
 
                 }
                 Err(_) => {
-                    match diesel::delete(users.filter(email.eq_all(&uid)))
+                    match diesel::delete(users::dsl::users.filter(email.eq_all(&uid)))
                         .execute(&*conn) {
                         Ok(_) => {
 
@@ -218,8 +216,31 @@ fn info(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, Status> 
     }
 }
 
+#[get("/all?<pages>")]
+pub fn get_all(pages: Option<i64>, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
+    let mut query = users::table.into_boxed();
+    // ..
+    let (user, total_pages) = match pages {
+        Some(page ) => {
+
+            let res = query.paginate(page)
+                .load::<(User, i64)>(&conn).unwrap();
+
+            let total = res.get(0).map(|x| x.1).unwrap_or(0);
+            let user : Vec<User> = res.into_iter().map(|x| x.0).collect();
+            let total_pages = (total as f64 / 10 as f64).ceil() as i64;
+
+            (user, total_pages)
+        },
+
+        None => (query.load(&*conn).unwrap(), 1),
+    };
+
+    Ok(Json((json!({"users":user, "total_pages":total_pages}))))
+}
+
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     rocket
-        .mount("/api/user", routes![create, info, delete_user, password_change, update_user])
+        .mount("/api/user", routes![create, info, delete_user, password_change, update_user, get_all])
         .mount("/api/auth", routes![login])
 }

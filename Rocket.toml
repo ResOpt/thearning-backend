@@ -1,14 +1,36 @@
-[development]
-address = "localhost"
+[default]
+address = "127.0.0.1"
 port = 8000
 workers = 8
 keep_alive = 5
 read_timeout = 5
 write_timeout = 5
 log = "normal"
-limits = { forms = 32768 }
 
-[staging]
+[default.limits]
+form = "50 MiB"
+json = "5 MiB"
+msgpack = "5 MiB"
+data-form = "50 MiB"
+file = "50 MiB"
+
+[debug]
+address = "127.0.0.1"
+port = 8000
+workers = 8
+keep_alive = 5
+read_timeout = 5
+write_timeout = 5
+log = "normal"
+
+[debug.limits]
+form = "50 MiB"
+json = "5 MiB"
+msgpack = "5 MiB"
+data-form = "50 MiB"
+file = "50 MiB"
+
+[release]
 address = "0.0.0.0"
 port = 8000
 workers = 8
@@ -16,14 +38,3 @@ keep_alive = 5
 read_timeout = 5
 write_timeout = 5
 log = "normal"
-limits = { forms = 32768 }
-
-[production]
-address = "0.0.0.0"
-port = 8000
-workers = 8
-keep_alive = 5
-read_timeout = 5
-write_timeout = 5
-log = "normal"
-limits = { forms = 32768 }

@@ -4,6 +4,7 @@ use bcrypt::{DEFAULT_COST, hash, verify};
 use chrono::{NaiveDate, NaiveDateTime, Local};
 use diesel;
 use diesel::pg::PgConnection;
+use diesel::pg::upsert::excluded;
 use diesel::prelude::*;
 use rocket::fs::TempFile;
 use serde::{Deserialize, Serialize};
@@ -21,13 +22,13 @@ pub enum Role {
     Admin,
 }
 
-impl Role {
-    pub fn from_str(role: &str) -> Result<Self, String> {
+impl From<&str> for Role {
+    fn from(role: &str) -> Self {
         match role {
-            "admin" => Ok(Self::Admin),
-            "teacher" => Ok(Self::Teacher),
-            "student" => Ok(Self::Student),
-            _ => Err("Invalid role".to_string()),
+            "admin" => Self::Admin,
+            "teacher" => Self::Teacher,
+            "student" => Self::Student,
+            _ => unimplemented!(),
         }
     }
 }
@@ -155,7 +156,7 @@ impl User {
             .get_result::<Self>(connection);
 
         match res {
-            Ok(user) => Role::from_str(&user.status),
+            Ok(user) => Ok(Role::from(user.status.as_str())),
             Err(e) => Err("User does not exist".to_string()),
         }
     }
@@ -225,15 +226,18 @@ impl Manipulable<Self> for User {
                   users::birth_place.eq(&update.birth_place),
                   users::birth_date.eq(&update.birth_date))).execute(conn)?;
 
-        users::dsl::users.find(&self.user_id).get_result::<Self>(conn)
+        users::dsl::users.find(&self.user_id)
+            .get_result::<Self>(conn)
     }
 
     fn delete(&self, conn: &PgConnection) -> QueryResult<Self> {
-        diesel::delete(users::table.find(&self.user_id)).get_result::<Self>(conn)
+        diesel::delete(users::table.find(&self.user_id))
+            .get_result::<Self>(conn)
     }
 
     fn get_all(conn: &PgConnection) -> QueryResult<Vec<Self>> {
-        users::table.load::<Self>(conn)
+        users::table
+            .load::<Self>(conn)
     }
 }
 

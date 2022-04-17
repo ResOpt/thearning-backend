@@ -35,7 +35,7 @@ async fn create_classroom<'a>(
 
     let user = User::find_user(&key.0, &*connection).unwrap();
 
-    match Role::from_str(&user.status).unwrap() {
+    match Role::from(user.status.as_str()) {
         Role::Student => return Err(Status::Forbidden),
         _ => {}
     }
@@ -60,7 +60,7 @@ async fn create_classroom<'a>(
         Err(_) => return Err(Status::BadRequest),
     }
 
-    match Role::from_str(user.status.as_str()).unwrap() {
+    match Role::from(user.status.as_str()) {
         Role::Teacher => {
             create_classuser::<Teacher>(&key.0, &class.class_id, &connection);
         }
@@ -127,7 +127,7 @@ pub fn join(
 #[get("/", rank = 1)]
 fn classrooms(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
     let user = users::table.find(&key.0).get_result::<User>(&*connection);
-    match Role::from_str(user.as_ref().unwrap().status.as_str()).unwrap() {
+    match Role::from(user.as_ref().unwrap().status.as_str()) {
         Role::Student => {
             let student = students::table
                 .filter(students::user_id.eq(user.unwrap().user_id))

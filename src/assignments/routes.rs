@@ -1,60 +1,48 @@
+use rocket::form::Form;
 use rocket::http::Status;
 use rocket::serde::{Deserialize, Serialize};
 use rocket::serde::json::Json;
 use rocket::serde::json::serde_json::json;
 use rocket_dyn_templates::handlebars::JsonValue;
 
-use crate::assignments::models::{Assignments, FillableAssignments};
-use crate::attachments::models::Attachment;
+use crate::assignments::models::{Assignment, FillableAssignments};
+use crate::attachments::models::{Attachment, FillableAttachment};
 use crate::auth::ApiKey;
 use crate::db;
 use crate::db::DbConn;
 use crate::files::models::UploadedFile;
+use crate::utils::update;
 
 #[derive(Serialize, Deserialize)]
 struct AssignmentData {
+    id: String,
     assignment: FillableAssignments,
     files: Option<Vec<UploadedFile>>,
 }
 
-#[post("/create", data = "<data>")]
-fn create(
-    key: ApiKey,
-    data: Json<AssignmentData>,
-    conn: db::DbConn,
-) -> Result<Json<JsonValue>, Json<JsonValue>> {
-    let d = data.into_inner();
-    let assignment = d.assignment.clone();
-    let files = d.files.clone();
+#[post("/")]
+fn draft(key: ApiKey, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
 
-    let new_assignment = match Assignments::create(assignment, &conn) {
+    let default = Assignment::default();
+
+    default.draft(&conn);
+
+    Ok(Json(json!({"assignment_id": default.assignment_id})))
+}
+
+#[patch("/", data = "<data>")]
+fn update_assignment(key: ApiKey, data: Json<AssignmentData>, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
+
+    let data = data.into_inner();
+
+    let assignment = match Assignment::get_by_id(&data.id, &conn) {
         Ok(v) => v,
-        Err(_) => return Err(Json(json!({"success":false}))),
-    };
-    match &files {
-        Some(f) => {
-            for file in f {
-                let new_file = match UploadedFile::new(&file.file_id, &file.filename, &file.file_path, &file.file_url,&file.filetype, &*conn) {
-                    Ok(nf) => nf,
-                    Err(_) => return Err(Json(json!({"success":false}))),
-                };
-                let new_attachment = match Attachment::create(
-                    &new_file.file_id,
-                    &Some(&new_assignment.assignment_id),
-                    &key.0,
-                    &*conn,
-                ) {
-                    Ok(na) => na,
-                    Err(_) => return Err(Json(json!({"success":false}))),
-                };
-            }
-        }
-        None => {}
+        Err(_) => return Err(Status::NotFound),
     };
 
-    Ok(Json(
-        json!({"success": true, "assignment_id": new_assignment.assignment_id}),
-    ))
+    let new = update(assignment, data.assignment, &conn).unwrap();
+
+    Ok(Json(json!({"new_assignment": new})))
 }
 
 #[get("/<assignment_id>", rank = 2)]
@@ -63,5 +51,5 @@ fn assignment(key: ApiKey, assignment_id: String, conn: DbConn) -> Result<Json<J
 }
 
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
-    rocket.mount("/api/classroom/assignments", routes![create])
+    rocket.mount("/api/classroom/assignments", routes![draft, update_assignment])
 }
