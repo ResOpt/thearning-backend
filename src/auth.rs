@@ -5,8 +5,8 @@ use rocket::http::Status;
 use rocket::request::{self, FromRequest, Request};
 use serde::{Deserialize, Serialize};
 
-use crate::db::database_url;
 use crate::catchers::Errors;
+use crate::db::database_url;
 use crate::users::models::{Role, User};
 use crate::users::utils::is_email;
 
@@ -72,11 +72,10 @@ impl<'r> FromRequest<'r> for ApiKey {
     type Error = Errors;
 
     async fn from_request(request: &'r Request<'_>) -> request::Outcome<ApiKey, Errors> {
-
         let keys = match request.headers().get("Authorization").collect::<Vec<_>>().first() {
             Some(k) => {
                 k.split("Bearer").map(|i| i.trim()).collect::<String>()
-            },
+            }
             None => return request::Outcome::Failure((Status::BadRequest, Errors::TokenInvalid)),
         };
 

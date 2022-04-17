@@ -1,11 +1,12 @@
 use std::ops::Deref;
+
 use chrono::NaiveDate;
 use diesel::{PgConnection, QueryResult};
 use rand::Rng;
 use rocket::form;
 use rocket::form::{DataField, FromFormField, ValueField};
-use rocket::http::RawStr;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+
 use crate::traits::Manipulable;
 
 pub fn generate_random_id() -> i32 {
@@ -14,8 +15,8 @@ pub fn generate_random_id() -> i32 {
 }
 
 pub fn update<T, U>(table: T, new_data: U, conn: &PgConnection)
-    -> QueryResult<T>
-where T: Manipulable<U> {
+                    -> QueryResult<T>
+    where T: Manipulable<U> {
     table.update(new_data, conn)
 }
 
@@ -24,7 +25,6 @@ pub struct NaiveDateForm(NaiveDate);
 
 #[rocket::async_trait]
 impl<'r> FromFormField<'r> for NaiveDateForm {
-
     fn from_value(field: ValueField<'r>) -> form::Result<'r, Self> {
         match NaiveDate::parse_from_str(field.value, "%Y-%m-%d") {
             Ok(res) => Ok(NaiveDateForm(res)),

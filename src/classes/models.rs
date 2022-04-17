@@ -5,7 +5,6 @@ use diesel::prelude::*;
 use rocket::fs::TempFile;
 use serde::{Deserialize, Serialize};
 
-use crate::classes::utils::*;
 use crate::schema::{classes, topics};
 use crate::traits::Manipulable;
 use crate::utils::generate_random_id;
@@ -52,7 +51,6 @@ pub struct NewTopic {
 
 impl Manipulable<Self> for Classroom {
     fn create(class: Self, conn: &PgConnection) -> QueryResult<Self> {
-
         let new_class = Self {
             class_id: class.class_id,
             class_name: class.class_name,
@@ -60,7 +58,7 @@ impl Manipulable<Self> for Classroom {
             class_creator: class.class_creator,
             class_description: class.class_description,
             class_image: class.class_image,
-            created_at: Local::now().naive_local()
+            created_at: Local::now().naive_local(),
         };
         diesel::insert_into(classes::table)
             .values(&new_class)
@@ -72,12 +70,11 @@ impl Manipulable<Self> for Classroom {
     }
 
     fn update(&self, update: Self, conn: &PgConnection) -> QueryResult<Self> {
-
         diesel::update(classes::table.filter(classes::class_id.eq(&self.class_id)))
             .set((classes::class_name.eq(&update.class_name),
-                        classes::class_creator.eq(&update.class_creator),
-                        classes::class_image.eq(&update.class_image),
-                        classes::class_description.eq(&update.class_description))).execute(conn)?;
+                  classes::class_creator.eq(&update.class_creator),
+                  classes::class_image.eq(&update.class_image),
+                  classes::class_description.eq(&update.class_description))).execute(conn)?;
 
         classes::dsl::classes.find(&self.class_id).get_result::<Self>(conn)
     }
@@ -99,7 +96,7 @@ impl Topic {
             id: generate_code,
             topic_name: topic.topic_name,
             classroom_id: topic.classroom_id,
-            created_at: Local::now().naive_local()
+            created_at: Local::now().naive_local(),
         };
 
         diesel::insert_into(topics::table)

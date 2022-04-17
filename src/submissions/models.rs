@@ -1,8 +1,8 @@
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use serde::{Deserialize, Serialize};
 
-use crate::schema::submissions;
 use crate::assignments::models::Assignment;
+use crate::schema::submissions;
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, Associations)]
 #[belongs_to(Assignment)]
@@ -16,7 +16,7 @@ pub struct Submissions {
     pub on_time: bool,
     pub marks_allotted: Option<i32>,
     pub submission_file: Option<String>,
-    pub created_at: NaiveDateTime
+    pub created_at: NaiveDateTime,
 }
 
 pub struct FillableSubmissions {}

@@ -1,10 +1,9 @@
 use std::fmt;
 
 use bcrypt::{DEFAULT_COST, hash, verify};
-use chrono::{NaiveDate, NaiveDateTime, Local};
+use chrono::{Local, NaiveDate, NaiveDateTime};
 use diesel;
 use diesel::pg::PgConnection;
-use diesel::pg::upsert::excluded;
 use diesel::prelude::*;
 use rocket::fs::TempFile;
 use serde::{Deserialize, Serialize};
@@ -13,7 +12,7 @@ use crate::schema::admins;
 use crate::schema::students;
 use crate::schema::teachers;
 use crate::schema::users;
-use crate::traits::{Manipulable, ClassUser};
+use crate::traits::{ClassUser, Manipulable};
 use crate::utils::{generate_random_id, NaiveDateForm};
 
 pub enum Role {
@@ -55,7 +54,7 @@ pub struct User {
     pub birth_date: NaiveDate,
     pub bio: String,
     pub status: String,
-    pub created_at: NaiveDateTime
+    pub created_at: NaiveDateTime,
 }
 
 #[derive(FromForm)]
@@ -127,7 +126,6 @@ pub struct Admin {
 }
 
 impl User {
-
     pub fn find_user(uid: &String, connection: &PgConnection) -> QueryResult<Self> {
         users::table.find(uid).get_result::<Self>(connection)
     }
@@ -182,13 +180,12 @@ impl User {
                         .set(users::password.eq(&new_hashed))
                         .execute(conn).unwrap();
                     Ok(())
-                }
-                else {
+                } else {
                     Err(())
                 }
             }
             Err(_) => {
-                return Err(())
+                return Err(());
             }
         }
     }

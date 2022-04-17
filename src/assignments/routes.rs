@@ -1,4 +1,3 @@
-use rocket::form::Form;
 use rocket::http::Status;
 use rocket::serde::{Deserialize, Serialize};
 use rocket::serde::json::Json;
@@ -6,7 +5,6 @@ use rocket::serde::json::serde_json::json;
 use rocket_dyn_templates::handlebars::JsonValue;
 
 use crate::assignments::models::{Assignment, FillableAssignments};
-use crate::attachments::models::{Attachment, FillableAttachment};
 use crate::auth::ApiKey;
 use crate::db;
 use crate::db::DbConn;
@@ -22,7 +20,6 @@ struct AssignmentData {
 
 #[post("/")]
 fn draft(key: ApiKey, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
-
     let default = Assignment::default();
 
     default.draft(&conn);
@@ -32,7 +29,6 @@ fn draft(key: ApiKey, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
 
 #[patch("/", data = "<data>")]
 fn update_assignment(key: ApiKey, data: Json<AssignmentData>, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
-
     let data = data.into_inner();
 
     let assignment = match Assignment::get_by_id(&data.id, &conn) {

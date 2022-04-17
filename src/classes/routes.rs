@@ -1,5 +1,6 @@
 use std::env;
-use chrono::{Local, NaiveDateTime};
+
+use chrono::Local;
 use diesel::{QueryDsl, RunQueryDsl};
 use diesel::dsl::any;
 use diesel::prelude::*;
@@ -17,10 +18,10 @@ use crate::db;
 use crate::db::DbConn;
 use crate::files::models::UploadType;
 use crate::files::routes;
+use crate::schema::admins;
 use crate::schema::classes;
 use crate::schema::students;
 use crate::schema::teachers;
-use crate::schema::admins;
 use crate::schema::users;
 use crate::traits::{ClassUser, Manipulable};
 use crate::users::models::{Admin, Role, Student, Teacher, User};
@@ -32,7 +33,6 @@ async fn create_classroom<'a>(
     new_class: Form<NewClassroom<'a>>,
     connection: db::DbConn,
 ) -> Result<Json<JsonValue>, Status> {
-
     let user = User::find_user(&key.0, &*connection).unwrap();
 
     match Role::from(user.status.as_str()) {
@@ -56,7 +56,7 @@ async fn create_classroom<'a>(
     };
 
     match Classroom::create(class.clone(), &connection) {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(_) => return Err(Status::BadRequest),
     }
 
@@ -71,7 +71,7 @@ async fn create_classroom<'a>(
     }
 
     let image_file = match new_class.image {
-        Some(img) => match routes::process_image(img, UploadType::ClassPicture,&new_class.file_name.unwrap_or("filename.jpg".to_string())).await {
+        Some(img) => match routes::process_image(img, UploadType::ClassPicture, &new_class.file_name.unwrap_or("filename.jpg".to_string())).await {
             Ok(v) => v,
             Err(_) => return Err(Status::BadRequest)
         }
@@ -185,13 +185,13 @@ fn topic(key: ApiKey, new_topic: Json<NewTopic>, connection: db::DbConn) -> Resu
 
     match User::get_role(&key.0, &*connection).unwrap() {
         Role::Student => {
-            return Err(Status::Forbidden)
+            return Err(Status::Forbidden);
         }
         _ => {
             match Topic::create(topic, &*connection) {
                 Ok(_) => {}
                 Err(_) => {
-                    return Err(Status::Conflict)
+                    return Err(Status::Conflict);
                 }
             };
         }

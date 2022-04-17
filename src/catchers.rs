@@ -1,5 +1,6 @@
-use rocket::serde::json::{Json, Value as JsonValue};
 use std::fmt;
+
+use rocket::serde::json::{Json, Value as JsonValue};
 use rocket::serde::json::serde_json::json;
 
 #[derive(Debug)]

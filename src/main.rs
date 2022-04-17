@@ -8,16 +8,15 @@ extern crate diesel;
 extern crate rocket;
 extern crate rocket_cors;
 
+use dotenv::dotenv;
 use rocket::http::Method;
 use rocket_cors::{AllowedHeaders, AllowedOrigins, Cors, CorsOptions};
 
 use assignments::routes as assignment_routes;
-use classes::routes as class_routes;
 use catchers::mount as error_routes;
+use classes::routes as class_routes;
 use files::routes as file_routes;
 use users::routes as user_routes;
-
-use dotenv::dotenv;
 
 mod classes;
 mod users;

@@ -1,21 +1,19 @@
 use std::{env, io};
 
-use diesel::{Connection, ExpressionMethods, PgConnection, QueryDsl};
+use diesel::{Connection, PgConnection};
 use rocket::form::Form;
-use rocket::form::validate::ext;
 use rocket::fs::{FileServer, TempFile};
 use rocket::fs::relative;
-use rocket::http::{ContentType, Status};
+use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::serde::json::serde_json::json;
 use rocket_dyn_templates::handlebars::JsonValue;
 
-use crate::db::database_url;
-use crate::files::models::{FileType, UploadedFile, UploadType};
 use crate::{db, MEDIA_URL};
 use crate::attachments::models::{Attachment, FillableAttachment};
 use crate::auth::ApiKey;
-use crate::schema::{files, attachments};
+use crate::db::database_url;
+use crate::files::models::{FileType, UploadedFile, UploadType};
 use crate::users::models::User;
 use crate::utils::generate_random_id;
 
@@ -46,7 +44,7 @@ pub async fn process_image<'a>(mut image: TempFile<'a>, upload_type: UploadType,
         }
     };
     let db_conn = PgConnection::establish(&database_url()).unwrap();
-    UploadedFile::new(&file_id, &filename, &file,&url, &"image".to_string(), &db_conn);
+    UploadedFile::new(&file_id, &filename, &file, &url, &"image".to_string(), &db_conn);
     image.move_copy_to(&file).await?;
     Ok(url)
 }
@@ -61,7 +59,7 @@ pub async fn process_attachment<'a>(mut f: TempFile<'a>, ext: &str) -> io::Resul
 
     let db_conn = PgConnection::establish(&database_url()).unwrap();
 
-    let up = UploadedFile::new(&file_id, &format!("{}.{}", &file_id, ext), &file,&url, &"image".to_string(), &db_conn) .unwrap();
+    let up = UploadedFile::new(&file_id, &format!("{}.{}", &file_id, ext), &file, &url, &"image".to_string(), &db_conn).unwrap();
 
     f.move_copy_to(&file).await?;
 
@@ -78,7 +76,6 @@ struct AttachmentData<'a> {
 
 #[post("/", data = "<data>")]
 async fn upload_file<'a>(key: ApiKey, data: Form<AttachmentData<'a>>, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
-
     let user = match User::find_user(&key.0, &conn) {
         Ok(u) => u,
         Err(_) => return Err(Status::Unauthorized),
@@ -122,7 +119,7 @@ async fn upload_file<'a>(key: ApiKey, data: Form<AttachmentData<'a>>, conn: db::
     let new_file = match uploaded_file {
         Ok(v) => {
             v
-        },
+        }
         Err(_) => return Err(Status::BadRequest)
     };
 
@@ -135,7 +132,7 @@ async fn upload_file<'a>(key: ApiKey, data: Form<AttachmentData<'a>>, conn: db::
 
     let attachment = Attachment::create(
         new_attachment,
-        &conn
+        &conn,
     ).unwrap();
 
     let file = UploadedFile::receive(&attachment.file_id, &conn).unwrap();
@@ -148,5 +145,5 @@ pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Bu
         .mount("/api/upload", routes![upload_file])
         .mount("/api/media/img/profiles", FileServer::from(relative!("media/profiles")))
         .mount("/api/media/img/classes", FileServer::from(relative!("media/classes")))
-        .mount("/api/media/attachments",  FileServer::from(relative!("media/attachments")))
+        .mount("/api/media/attachments", FileServer::from(relative!("media/attachments")))
 }

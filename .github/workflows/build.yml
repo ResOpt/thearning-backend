@@ -49,6 +49,6 @@ jobs:
           cargo build
       - name: Test
         run: |
-          mkdir -p media/classes media/profiles
+          mkdir -p media/classes media/profiles media/attachments
           cargo test -- --test-threads 1
           rm -rf media

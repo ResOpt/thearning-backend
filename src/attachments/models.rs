@@ -4,16 +4,16 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::schema::attachments;
-use crate::utils::generate_random_id;
-use crate::users::models::User;
 use crate::assignments::models::Assignment;
 use crate::files::models::UploadedFile;
+use crate::schema::attachments;
+use crate::users::models::User;
+use crate::utils::generate_random_id;
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, Associations)]
-#[belongs_to(User, foreign_key="uploader")]
-#[belongs_to(Assignment, foreign_key="assignment_id")]
-#[belongs_to(UploadedFile, foreign_key="file_id")]
+#[belongs_to(User, foreign_key = "uploader")]
+#[belongs_to(Assignment, foreign_key = "assignment_id")]
+#[belongs_to(UploadedFile, foreign_key = "file_id")]
 #[table_name = "attachments"]
 pub struct Attachment {
     pub attachment_id: String,
@@ -37,7 +37,6 @@ impl Attachment {
         new_data: FillableAttachment,
         conn: &PgConnection,
     ) -> QueryResult<Self> {
-
         let new_attachment = Self {
             attachment_id: generate_random_id().to_string(),
             file_id: new_data.file_id.to_string(),
@@ -50,7 +49,7 @@ impl Attachment {
                 None => None,
             },
             uploader: new_data.uploader.to_string(),
-            created_at: Local::now().naive_local()
+            created_at: Local::now().naive_local(),
         };
 
         diesel::insert_into(attachments::table)

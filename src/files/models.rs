@@ -2,7 +2,6 @@ use chrono::{Local, NaiveDateTime};
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
-use rocket::fs::TempFile;
 use serde::{Deserialize, Serialize};
 
 use crate::schema::files;
@@ -24,7 +23,7 @@ pub enum UploadType {
 }
 
 impl FileType {
-   pub fn from_str(filetype: &str) -> Self {
+    pub fn from_str(filetype: &str) -> Self {
         match filetype {
             "video/mp4" => Self::MP4,
             "video/x-matroska" => Self::MKV,
@@ -57,7 +56,7 @@ impl UploadedFile {
             file_path: file_path.to_string(),
             file_url: file_url.to_string(),
             filetype: filetype.to_string(),
-            created_at: Local::now().naive_local()
+            created_at: Local::now().naive_local(),
         };
 
         diesel::insert_into(files::table)

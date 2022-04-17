@@ -62,7 +62,7 @@ impl Default for Assignment {
             instructions: None,
             total_marks: None,
             created_at: Local::now().naive_local(),
-            draft: true
+            draft: true,
         }
     }
 }
@@ -75,12 +75,12 @@ impl Manipulable<FillableAssignments> for Assignment {
     fn update(&self, update: FillableAssignments, conn: &PgConnection) -> QueryResult<Self> {
         diesel::update(assignments::table.filter(assignments::assignment_id.eq(&self.assignment_id)))
             .set((assignments::assignment_name.eq(&update.assignment_name),
-            assignments::due_date.eq(&update.due_date),
-            assignments::due_time.eq(&update.due_time),
-            assignments::topic_id.eq(&update.topic_id),
-            assignments::class_id.eq(&update.class_id),
-            assignments::instructions.eq(&update.instructions),
-            assignments::draft.eq(false)))
+                  assignments::due_date.eq(&update.due_date),
+                  assignments::due_time.eq(&update.due_time),
+                  assignments::topic_id.eq(&update.topic_id),
+                  assignments::class_id.eq(&update.class_id),
+                  assignments::instructions.eq(&update.instructions),
+                  assignments::draft.eq(false)))
             .execute(conn)?;
 
         assignments::dsl::assignments.find(&self.assignment_id)

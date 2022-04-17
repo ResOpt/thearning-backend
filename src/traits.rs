@@ -1,8 +1,8 @@
 use diesel::{PgConnection, QueryResult};
 
 pub trait Manipulable<T>
-where
-    Self: Sized,
+    where
+        Self: Sized,
 {
     fn create(new_data: T, conn: &PgConnection) -> QueryResult<Self>;
 
@@ -15,6 +15,6 @@ where
 
 pub trait ClassUser {
     fn create(uid: &String, class_id: &String, connection: &PgConnection) -> QueryResult<Self>
-    where
-        Self: Sized;
+        where
+            Self: Sized;
 }

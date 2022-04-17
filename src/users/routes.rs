@@ -41,7 +41,7 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
         birth_date: *user.birth_date,
         bio: user.bio.to_string(),
         status: user.status.to_string(),
-        created_at: Local::now().naive_local()
+        created_at: Local::now().naive_local(),
     };
 
     let cloned_user = new_user.clone();
@@ -49,8 +49,8 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
     match User::create(new_user, &connection) {
         Ok(query) => {}
         Err(_) => {
-            return Err(Status::Conflict)
-        },
+            return Err(Status::Conflict);
+        }
     }
 
     let image_file = match user.image {
@@ -75,22 +75,17 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
 
 #[delete("/", data = "<uid>")]
 fn delete_user(key: ApiKey, uid: String, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
-
     match User::get_role(&key.0, &*conn).unwrap() {
         Role::Admin => {
             match diesel::delete(users::dsl::users.filter(user_id.eq_all(&uid)))
                 .execute(&*conn) {
-                Ok(_) => {
-
-                }
+                Ok(_) => {}
                 Err(_) => {
                     match diesel::delete(users::dsl::users.filter(email.eq_all(&uid)))
                         .execute(&*conn) {
-                        Ok(_) => {
-
-                        }
+                        Ok(_) => {}
                         Err(_) => {
-                            return Err(Status::BadRequest)
+                            return Err(Status::BadRequest);
                         }
                     }
                 }
@@ -143,13 +138,13 @@ async fn update_user<'a>(key: ApiKey, data: Form<UpdatableUser<'a>>, conn: db::D
 
     let image: Option<String> = match data.image {
         Some(i) => {
-            match process_image(i, UploadType::ProfilePhoto,&data.file_name.unwrap_or("filename.jpg".to_string())).await {
+            match process_image(i, UploadType::ProfilePhoto, &data.file_name.unwrap_or("filename.jpg".to_string())).await {
                 Ok(res) => {
                     let old_file = UploadedFile::get_from_url(&cloned_user.profile_photo, &conn).unwrap();
                     fs::remove_file(old_file.file_path).unwrap();
 
                     Some(res)
-                },
+                }
                 Err(_) => return Err(Status::BadRequest)
             }
         }
@@ -170,11 +165,11 @@ async fn update_user<'a>(key: ApiKey, data: Form<UpdatableUser<'a>>, conn: db::D
         birth_date: *data.birth_date,
         bio: data.bio,
         status: cloned_user.status,
-        created_at: Local::now().naive_local()
+        created_at: Local::now().naive_local(),
     };
 
     match update(user, updated_user, &conn) {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(_) => return Err(Status::UnprocessableEntity)
     };
 
@@ -183,7 +178,6 @@ async fn update_user<'a>(key: ApiKey, data: Form<UpdatableUser<'a>>, conn: db::D
 
 #[post("/password_change", format = "application/json", data = "<data>")]
 fn password_change(key: ApiKey, data: Json<PasswordChange>, conn: db::DbConn) -> Result<Status, Status> {
-
     let data = data.into_inner();
 
     let user = match User::find_user(&key.0, &conn) {
@@ -221,17 +215,16 @@ pub fn get_all(pages: Option<i64>, conn: db::DbConn) -> Result<Json<JsonValue>, 
     let mut query = users::table.into_boxed();
     // ..
     let (user, total_pages) = match pages {
-        Some(page ) => {
-
+        Some(page) => {
             let res = query.paginate(page)
                 .load::<(User, i64)>(&conn).unwrap();
 
             let total = res.get(0).map(|x| x.1).unwrap_or(0);
-            let user : Vec<User> = res.into_iter().map(|x| x.0).collect();
+            let user: Vec<User> = res.into_iter().map(|x| x.0).collect();
             let total_pages = (total as f64 / 10 as f64).ceil() as i64;
 
             (user, total_pages)
-        },
+        }
 
         None => (query.load(&*conn).unwrap(), 1),
     };
