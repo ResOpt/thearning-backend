@@ -4,6 +4,7 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use rocket::fs::TempFile;
 use serde::{Deserialize, Serialize};
+use crate::errors::ThearningResult;
 
 use crate::schema::{classes, topics};
 use crate::traits::Manipulable;
@@ -50,7 +51,7 @@ pub struct NewTopic {
 }
 
 impl Manipulable<Self> for Classroom {
-    fn create(class: Self, conn: &PgConnection) -> QueryResult<Self> {
+    fn create(class: Self, conn: &PgConnection) -> ThearningResult<Self> {
         let new_class = Self {
             class_id: class.class_id,
             class_name: class.class_name,
@@ -64,26 +65,30 @@ impl Manipulable<Self> for Classroom {
             .values(&new_class)
             .execute(conn)?;
 
-        classes::table
+        let res = classes::table
             .find(new_class.class_id)
-            .get_result::<Self>(conn)
+            .get_result::<Self>(conn)?;
+
+        Ok(res)
     }
 
-    fn update(&self, update: Self, conn: &PgConnection) -> QueryResult<Self> {
+    fn update(&self, update: Self, conn: &PgConnection) -> ThearningResult<Self> {
         diesel::update(classes::table.filter(classes::class_id.eq(&self.class_id)))
             .set((classes::class_name.eq(&update.class_name),
                   classes::class_creator.eq(&update.class_creator),
                   classes::class_image.eq(&update.class_image),
                   classes::class_description.eq(&update.class_description))).execute(conn)?;
 
-        classes::dsl::classes.find(&self.class_id).get_result::<Self>(conn)
+        let res = classes::dsl::classes.find(&self.class_id).get_result::<Self>(conn)?;
+
+        Ok(res)
     }
 
-    fn delete(&self, conn: &PgConnection) -> QueryResult<Self> {
+    fn delete(&self, conn: &PgConnection) -> ThearningResult<Self> {
         todo!()
     }
 
-    fn get_all(conn: &PgConnection) -> QueryResult<Vec<Self>> {
+    fn get_all(conn: &PgConnection) -> ThearningResult<Vec<Self>> {
         todo!()
     }
 }

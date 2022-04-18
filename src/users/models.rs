@@ -7,6 +7,7 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use rocket::fs::TempFile;
 use serde::{Deserialize, Serialize};
+use crate::errors::{ErrorKind, ThearningResult};
 
 use crate::schema::admins;
 use crate::schema::students;
@@ -126,8 +127,10 @@ pub struct Admin {
 }
 
 impl User {
-    pub fn find_user(uid: &String, connection: &PgConnection) -> QueryResult<Self> {
-        users::table.find(uid).get_result::<Self>(connection)
+    pub fn find_user(uid: &String, connection: &PgConnection) -> ThearningResult<Self> {
+        let res = users::table.find(uid).get_result::<Self>(connection)?;
+
+        Ok(res)
     }
 
     pub fn get_by_key(key_: &String, password_: String, connection: &PgConnection) -> Option<Self> {
@@ -148,25 +151,22 @@ impl User {
         }
     }
 
-    pub fn get_role(key_: &String, connection: &PgConnection) -> Result<Role, String> {
+    pub fn get_role(key_: &String, connection: &PgConnection) -> ThearningResult<Role> {
         let res = users::table
             .filter(users::user_id.eq(key_))
-            .get_result::<Self>(connection);
+            .get_result::<Self>(connection)?;
 
-        match res {
-            Ok(user) => Ok(Role::from(user.status.as_str())),
-            Err(e) => Err("User does not exist".to_string()),
-        }
+        Ok(Role::from(res.status.as_str()))
     }
 
-    pub fn get_id_from_email(email: &String, connection: &PgConnection) -> Result<String, String> {
+    pub fn get_id_from_email(email: &String, connection: &PgConnection) -> ThearningResult<String> {
         let res = users::table
             .filter(users::email.eq(email))
             .get_result::<Self>(connection);
 
         match res {
             Ok(user) => Ok(user.user_id),
-            Err(e) => Err("User does not exist".to_string()),
+            Err(e) => Err(ErrorKind::from(e)),
         }
     }
 
@@ -200,7 +200,7 @@ impl User {
 }
 
 impl Manipulable<Self> for User {
-    fn create(new_data: Self, conn: &PgConnection) -> QueryResult<Self> {
+    fn create(new_data: Self, conn: &PgConnection) -> ThearningResult<Self> {
         let hashed = Self {
             password: hash(new_data.password, DEFAULT_COST).unwrap(),
             ..new_data
@@ -209,12 +209,14 @@ impl Manipulable<Self> for User {
             .values(&hashed)
             .execute(conn)?;
 
-        users::table
+        let res = users::table
             .find(hashed.user_id)
-            .get_result::<Self>(conn)
+            .get_result::<Self>(conn)?;
+
+        Ok(res)
     }
 
-    fn update(&self, update: Self, conn: &PgConnection) -> QueryResult<Self> {
+    fn update(&self, update: Self, conn: &PgConnection) -> ThearningResult<Self> {
         diesel::update(users::table.filter(users::user_id.eq(&self.user_id)))
             .set((users::fullname.eq(&update.fullname),
                   users::profile_photo.eq(&update.profile_photo),
@@ -223,18 +225,24 @@ impl Manipulable<Self> for User {
                   users::birth_place.eq(&update.birth_place),
                   users::birth_date.eq(&update.birth_date))).execute(conn)?;
 
-        users::dsl::users.find(&self.user_id)
-            .get_result::<Self>(conn)
+        let res = users::dsl::users.find(&self.user_id)
+            .get_result::<Self>(conn)?;
+
+        Ok(res)
     }
 
-    fn delete(&self, conn: &PgConnection) -> QueryResult<Self> {
-        diesel::delete(users::table.find(&self.user_id))
-            .get_result::<Self>(conn)
+    fn delete(&self, conn: &PgConnection) -> ThearningResult<Self> {
+        let res = diesel::delete(users::table.find(&self.user_id))
+            .get_result::<Self>(conn)?;
+
+        Ok(res)
     }
 
-    fn get_all(conn: &PgConnection) -> QueryResult<Vec<Self>> {
-        users::table
-            .load::<Self>(conn)
+    fn get_all(conn: &PgConnection) -> ThearningResult<Vec<Self>> {
+        let res = users::table
+            .load::<Self>(conn)?;
+
+        Ok(res)
     }
 }
 
@@ -245,7 +253,7 @@ macro_rules! impl_classuser {
                 uid: &String,
                 class_id: &String,
                 connection: &PgConnection,
-            ) -> QueryResult<Self> {
+            ) -> ThearningResult<Self> {
                 let u = Self {
                     id: generate_random_id(),
                     user_id: uid.to_string(),
@@ -256,9 +264,11 @@ macro_rules! impl_classuser {
                     .values(&u)
                     .execute(connection)?;
 
-                $d::table
+                let res = $d::table
                     .filter($d::user_id.eq(u.user_id))
-                    .get_result::<Self>(connection)
+                    .get_result::<Self>(connection)?;
+
+                Ok(res)
             }
         }
     };

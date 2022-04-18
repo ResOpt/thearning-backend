@@ -3,6 +3,7 @@ use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use crate::errors::ThearningResult;
 
 use crate::schema::assignments;
 use crate::traits::Manipulable;
@@ -68,11 +69,11 @@ impl Default for Assignment {
 }
 
 impl Manipulable<FillableAssignments> for Assignment {
-    fn create(new_data: FillableAssignments, conn: &PgConnection) -> QueryResult<Self> {
+    fn create(new_data: FillableAssignments, conn: &PgConnection) -> ThearningResult<Self> {
         unimplemented!()
     }
 
-    fn update(&self, update: FillableAssignments, conn: &PgConnection) -> QueryResult<Self> {
+    fn update(&self, update: FillableAssignments, conn: &PgConnection) -> ThearningResult<Self> {
         diesel::update(assignments::table.filter(assignments::assignment_id.eq(&self.assignment_id)))
             .set((assignments::assignment_name.eq(&update.assignment_name),
                   assignments::due_date.eq(&update.due_date),
@@ -83,16 +84,16 @@ impl Manipulable<FillableAssignments> for Assignment {
                   assignments::draft.eq(false)))
             .execute(conn)?;
 
-        assignments::dsl::assignments.find(&self.assignment_id)
-            .get_result::<Self>(conn)
+        Ok(assignments::dsl::assignments.find(&self.assignment_id)
+            .get_result::<Self>(conn)?)
     }
 
-    fn delete(&self, conn: &PgConnection) -> QueryResult<Self> {
-        diesel::delete(assignments::table.find(&self.assignment_id))
-            .get_result::<Self>(conn)
+    fn delete(&self, conn: &PgConnection) -> ThearningResult<Self> {
+        Ok(diesel::delete(assignments::table.find(&self.assignment_id))
+            .get_result::<Self>(conn)?)
     }
 
-    fn get_all(conn: &PgConnection) -> QueryResult<Vec<Self>> {
+    fn get_all(conn: &PgConnection) -> ThearningResult<Vec<Self>> {
         todo!()
     }
 }

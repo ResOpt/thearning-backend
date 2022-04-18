@@ -13,7 +13,7 @@ use rocket::http::Method;
 use rocket_cors::{AllowedHeaders, AllowedOrigins, Cors, CorsOptions};
 
 use assignments::routes as assignment_routes;
-use catchers::mount as error_routes;
+use errors::mount as error_routes;
 use classes::routes as class_routes;
 use files::routes as file_routes;
 use users::routes as user_routes;
@@ -30,7 +30,7 @@ pub mod schema;
 mod submissions;
 mod tests;
 mod utils;
-mod catchers;
+mod errors;
 mod traits;
 mod pagination;
 

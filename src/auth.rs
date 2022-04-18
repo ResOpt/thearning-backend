@@ -5,7 +5,7 @@ use rocket::http::Status;
 use rocket::request::{self, FromRequest, Request};
 use serde::{Deserialize, Serialize};
 
-use crate::catchers::Errors;
+use crate::errors::{ErrorKind, ThearningResult};
 use crate::db::database_url;
 use crate::users::models::{Role, User};
 use crate::users::utils::is_email;
@@ -24,20 +24,14 @@ pub(crate) struct Claims {
 #[derive(Clone)]
 pub struct ApiKey(pub String);
 
-pub fn generate_token(key: &String, role: &Role) -> Result<String, Errors> {
+pub fn generate_token(key: &String, role: &Role) -> ThearningResult<String> {
     let now = (Local::now().timestamp_nanos() / 1_000_000_00) as usize;
 
     let mut sub = key.clone();
-    let db_conn = match PgConnection::establish(&database_url()) {
-        Ok(c) => c,
-        Err(_) => return Err(Errors::FailedToCreateJWT),
-    };
+    let db_conn = PgConnection::establish(&database_url())?;
 
     if is_email(key) {
-        sub = match User::get_id_from_email(key, &db_conn) {
-            Ok(ok) => ok,
-            Err(_) => return Err(Errors::FailedToCreateJWT),
-        };
+        sub = User::get_id_from_email(key, &db_conn)?;
     }
 
     let claims = Claims {
@@ -48,11 +42,10 @@ pub fn generate_token(key: &String, role: &Role) -> Result<String, Errors> {
     };
 
     let header = Header::new(Algorithm::HS512);
-    encode(&header, &claims, &EncodingKey::from_secret(SECRET))
-        .map_err(|_| Errors::FailedToCreateJWT)
+    Ok(encode(&header, &claims, &EncodingKey::from_secret(SECRET))?)
 }
 
-pub fn read_token(key: &str) -> Result<String, Errors> {
+pub fn read_token(key: &str) -> ThearningResult<String> {
     let now = (Local::now().timestamp_nanos() / 1_000_000_00) as usize;
 
     match decode::<Claims>(
@@ -63,20 +56,20 @@ pub fn read_token(key: &str) -> Result<String, Errors> {
         Ok(v) => {
             Ok(v.claims.sub)
         }
-        Err(_) => Err(Errors::TokenInvalid),
+        Err(e) => Err(ErrorKind::from(e)),
     }
 }
 
 #[rocket::async_trait]
 impl<'r> FromRequest<'r> for ApiKey {
-    type Error = Errors;
+    type Error = ErrorKind;
 
-    async fn from_request(request: &'r Request<'_>) -> request::Outcome<ApiKey, Errors> {
+    async fn from_request(request: &'r Request<'_>) -> request::Outcome<ApiKey, ErrorKind> {
         let keys = match request.headers().get("Authorization").collect::<Vec<_>>().first() {
             Some(k) => {
                 k.split("Bearer").map(|i| i.trim()).collect::<String>()
             }
-            None => return request::Outcome::Failure((Status::BadRequest, Errors::TokenInvalid)),
+            None => return request::Outcome::Failure((Status::BadRequest, ErrorKind::InvalidValue)),
         };
 
         match read_token(keys.as_str()) {

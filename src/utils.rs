@@ -6,6 +6,7 @@ use rand::Rng;
 use rocket::form;
 use rocket::form::{DataField, FromFormField, ValueField};
 use serde::{Deserialize, Serialize};
+use crate::errors::ThearningResult;
 
 use crate::traits::Manipulable;
 
@@ -15,7 +16,7 @@ pub fn generate_random_id() -> i32 {
 }
 
 pub fn update<T, U>(table: T, new_data: U, conn: &PgConnection)
-                    -> QueryResult<T>
+                    -> ThearningResult<T>
     where T: Manipulable<U> {
     table.update(new_data, conn)
 }
