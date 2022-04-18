@@ -252,7 +252,7 @@ macro_rules! impl_classuser {
             fn create(
                 uid: &String,
                 class_id: &String,
-                connection: &PgConnection,
+                conn: &PgConnection,
             ) -> ThearningResult<Self> {
                 let u = Self {
                     id: generate_random_id(),
@@ -262,13 +262,23 @@ macro_rules! impl_classuser {
                 };
                 diesel::insert_into($d::table)
                     .values(&u)
-                    .execute(connection)?;
+                    .execute(conn)?;
 
                 let res = $d::table
                     .filter($d::user_id.eq(u.user_id))
-                    .get_result::<Self>(connection)?;
+                    .get_result::<Self>(conn)?;
 
                 Ok(res)
+            }
+
+            fn load_in_class(class_id: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>> {
+                Ok($d::table
+                    .filter($d::class_id.eq(&class_id))
+                    .load::<Self>(conn)?.into_iter().collect::<Vec<Self>>())
+            }
+
+            fn find(uid: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>> {
+                Ok($d::table.filter($d::user_id.eq(uid)).load::<Self>(conn)?)
             }
         }
     };

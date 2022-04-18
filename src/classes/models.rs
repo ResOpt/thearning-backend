@@ -50,6 +50,12 @@ pub struct NewTopic {
     pub classroom_id: String,
 }
 
+impl Classroom {
+    pub fn find(id: &String, conn: &PgConnection) -> ThearningResult<Self> {
+        Ok(classes::table.find(id).get_result::<Self>(conn)?)
+    }
+}
+
 impl Manipulable<Self> for Classroom {
     fn create(class: Self, conn: &PgConnection) -> ThearningResult<Self> {
         let new_class = Self {

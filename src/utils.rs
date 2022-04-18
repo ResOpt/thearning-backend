@@ -8,7 +8,7 @@ use rocket::form::{DataField, FromFormField, ValueField};
 use serde::{Deserialize, Serialize};
 use crate::errors::ThearningResult;
 
-use crate::traits::Manipulable;
+use crate::traits::{ClassUser, Manipulable};
 
 pub fn generate_random_id() -> i32 {
     let mut rng = rand::thread_rng();
@@ -19,6 +19,11 @@ pub fn update<T, U>(table: T, new_data: U, conn: &PgConnection)
                     -> ThearningResult<T>
     where T: Manipulable<U> {
     table.update(new_data, conn)
+}
+
+pub fn load_classuser<T>(class_id: &String, conn: &PgConnection) -> Vec<T>
+where T: ClassUser {
+    T::load_in_class(class_id, conn).unwrap()
 }
 
 #[derive(Serialize, Deserialize)]

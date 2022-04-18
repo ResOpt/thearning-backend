@@ -15,7 +15,7 @@ use crate::utils::update;
 struct AssignmentData {
     id: String,
     assignment: FillableAssignments,
-    files: Option<Vec<UploadedFile>>,
+    files: Option<Vec<String>>,
 }
 
 #[post("/")]

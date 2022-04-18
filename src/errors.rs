@@ -8,7 +8,6 @@ use rocket::serde::json::serde_json::json;
 #[derive(Debug)]
 pub enum ErrorKind {
     QueryError(diesel::result::Error),
-    HttpError(Status),
     IOError(std::io::Error),
     DBError(ConnectionError),
     JWTError(jsonwebtoken::errors::Error),
@@ -44,7 +43,6 @@ impl fmt::Display for ErrorKind {
         let msg = match self {
             ErrorKind::QueryError(err) => err.to_string(),
             ErrorKind::IOError(err) => err.to_string(),
-            ErrorKind::HttpError(err) => err.to_string(),
             ErrorKind::DBError(err) => err.to_string(),
             ErrorKind::JWTError(err) => err.to_string(),
             ErrorKind::InvalidValue => "Invalid".to_string(),

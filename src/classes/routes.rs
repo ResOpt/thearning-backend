@@ -10,6 +10,7 @@ use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::serde::json::serde_json::json;
 use rocket_dyn_templates::handlebars::JsonValue;
+use crate::assignments::models::Assignment;
 
 use crate::auth::ApiKey;
 use crate::classes::models::{Classroom, NewClassroom, NewTopic, Topic};
@@ -18,14 +19,11 @@ use crate::db;
 use crate::db::DbConn;
 use crate::files::models::UploadType;
 use crate::files::routes;
-use crate::schema::admins;
 use crate::schema::classes;
-use crate::schema::students;
-use crate::schema::teachers;
 use crate::schema::users;
 use crate::traits::{ClassUser, Manipulable};
 use crate::users::models::{Admin, Role, Student, Teacher, User};
-use crate::utils::update;
+use crate::utils::{load_classuser, update};
 
 #[post("/", data = "<new_class>", rank = 1)]
 async fn create_classroom<'a>(
@@ -129,9 +127,7 @@ fn classrooms(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, St
     let user = users::table.find(&key.0).get_result::<User>(&*connection);
     match Role::from(user.as_ref().unwrap().status.as_str()) {
         Role::Student => {
-            let student = students::table
-                .filter(students::user_id.eq(user.unwrap().user_id))
-                .load::<Student>(&*connection)
+            let student = Student::find(&key.0, &connection)
                 .unwrap();
 
             let students_class_ids = student.into_iter()
@@ -145,9 +141,7 @@ fn classrooms(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, St
             Ok(Json(json!({ "class_ids": students_classes })))
         }
         Role::Teacher => {
-            let teacher = teachers::table
-                .filter(teachers::user_id.eq(user.unwrap().user_id))
-                .load::<Teacher>(&*connection)
+            let teacher = Teacher::find(&key.0, &connection)
                 .unwrap();
 
             let teachers_class_ids = teacher.into_iter()
@@ -161,9 +155,7 @@ fn classrooms(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, St
             Ok(Json(json!({ "class_ids": teachers_classes })))
         }
         Role::Admin => {
-            let admin = admins::table
-                .filter(admins::user_id.eq(user.unwrap().user_id))
-                .load::<Admin>(&*connection)
+            let admin = Admin::find(&key.0, &connection)
                 .unwrap();
 
             let admins_class_ids = admin.into_iter()
@@ -201,18 +193,15 @@ fn topic(key: ApiKey, new_topic: Json<NewTopic>, connection: db::DbConn) -> Resu
 }
 
 #[get("/<class_id>", rank = 2)]
-fn class(key: ApiKey, class_id: String, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
-    let students_ = students::table
-        .filter(students::class_id.eq(&class_id))
-        .load::<Student>(&*connection)
-        .unwrap().into_iter().collect::<Vec<Student>>();
+fn class(key: ApiKey, class_id: String, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
 
-    let teachers_ = teachers::table
-        .filter(teachers::class_id.eq(&class_id))
-        .load::<Teacher>(&*connection)
-        .unwrap().into_iter().collect::<Vec<Teacher>>();
+    let class = Classroom::find(&class_id, &conn).unwrap();
 
-    todo!()
+    let students = load_classuser::<Student>(&class_id, &conn);
+    let admins = load_classuser::<Admin>(&class_id, &conn);
+    let teachers = load_classuser::<Teacher>(&class_id, &conn);
+
+    Ok(Json(json!({"class": class, "students": students, "admins": admins, "teachers": teachers})))
 }
 
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {

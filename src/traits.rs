@@ -14,8 +14,13 @@ pub trait Manipulable<T>
     fn get_all(conn: &PgConnection) -> ThearningResult<Vec<Self>>;
 }
 
-pub trait ClassUser {
-    fn create(uid: &String, class_id: &String, connection: &PgConnection) -> ThearningResult<Self>
-        where
-            Self: Sized;
+pub trait ClassUser
+    where
+        Self: Sized,
+{
+    fn create(uid: &String, class_id: &String, conn: &PgConnection) -> ThearningResult<Self>;
+
+    fn load_in_class(class_id: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>>;
+
+    fn find(uid: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>>;
 }
