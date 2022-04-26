@@ -13,12 +13,13 @@ use crate::{db, MEDIA_URL};
 use crate::attachments::models::{Attachment, FillableAttachment};
 use crate::auth::ApiKey;
 use crate::db::database_url;
+use crate::errors::ThearningResult;
 use crate::files::models::{FileType, UploadedFile, UploadType};
 use crate::users::models::User;
 use crate::utils::generate_random_id;
 
-pub async fn process_image<'a>(mut image: TempFile<'a>, upload_type: UploadType, filename: &String) -> io::Result<String> {
-    let url = env::var("SITE_URL").unwrap();
+pub async fn process_image<'a>(mut image: TempFile<'a>, upload_type: UploadType, filename: &String) -> ThearningResult<String> {
+    let url = env::var("SITE_URL")?;
     let file_id = generate_random_id().to_string();
     let current_dir = std::env::current_dir()?;
     let file = match &upload_type {
@@ -43,13 +44,13 @@ pub async fn process_image<'a>(mut image: TempFile<'a>, upload_type: UploadType,
             format!("{}/{}-{}", format!("http://{}/api/media/attachments", url), &file_id, filename)
         }
     };
-    let db_conn = PgConnection::establish(&database_url()).unwrap();
-    UploadedFile::new(&file_id, &filename, &file, &url, &"image".to_string(), &db_conn);
+    let db_conn = PgConnection::establish(&database_url())?;
+    UploadedFile::new(&file_id, &filename, &file, &url, &"image".to_string(), &db_conn)?;
     image.move_copy_to(&file).await?;
     Ok(url)
 }
 
-pub async fn process_attachment<'a>(mut f: TempFile<'a>, ext: &str) -> io::Result<UploadedFile> {
+pub async fn process_attachment<'a>(mut f: TempFile<'a>, ext: &str) -> ThearningResult<UploadedFile> {
     let url = env::var("SITE_URL").unwrap();
     let file_id = generate_random_id().to_string();
     let current_dir = std::env::current_dir()?;

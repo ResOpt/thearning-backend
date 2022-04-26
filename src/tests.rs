@@ -171,7 +171,7 @@ mod tests {
 
         let read = read_token(&r.0.token).unwrap();
 
-        let string = format!("class_name=Test Class&class_creator={}&class_description=Just a Test Class&section=Testing Class", read);
+        let string = format!("class_name=Test Class&class_description=Just a Test Class&section=Testing Class");
 
         let client = client();
 

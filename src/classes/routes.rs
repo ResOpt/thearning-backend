@@ -33,6 +33,8 @@ async fn create_classroom<'a>(
 ) -> Result<Json<JsonValue>, Status> {
     let user = User::find_user(&key.0, &*connection).unwrap();
 
+    let cloned_key = key.clone();
+
     match Role::from(user.status.as_str()) {
         Role::Student => return Err(Status::Forbidden),
         _ => {}
@@ -46,7 +48,7 @@ async fn create_classroom<'a>(
     let class = Classroom {
         class_id: generate_code,
         class_name: new_class.class_name,
-        class_creator: new_class.class_creator,
+        class_creator: Some(cloned_key.0),
         class_description: new_class.class_description,
         class_image: None,
         section: new_class.section,
@@ -201,8 +203,15 @@ fn class(key: ApiKey, class_id: String, conn: db::DbConn) -> Result<Json<JsonVal
     let admins = load_classuser::<Admin>(&class_id, &conn);
     let teachers = load_classuser::<Teacher>(&class_id, &conn);
 
-    Ok(Json(json!({"class": class, "students": students, "admins": admins, "teachers": teachers})))
+    let assignments = Assignment::load(&class.class_id, &conn).unwrap();
+
+    Ok(Json(json!({"class": class, "students": students, "admins": admins, "teachers": teachers, "assignments":assignments})))
 }
+
+// #[patch("/<class_id>", rank = 2)]
+// fn update_class(key: ApiKey, new_data: NewClassroom, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
+//     unimplemented!()
+// }
 
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     rocket.mount(

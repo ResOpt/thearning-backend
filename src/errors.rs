@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{env, fmt};
 use diesel::ConnectionError;
 use rocket::http::Status;
 
@@ -11,12 +11,19 @@ pub enum ErrorKind {
     IOError(std::io::Error),
     DBError(ConnectionError),
     JWTError(jsonwebtoken::errors::Error),
+    VarError(env::VarError),
     InvalidValue,
 }
 
 impl From<diesel::result::Error> for ErrorKind {
     fn from(error: diesel::result::Error) -> Self {
         ErrorKind::QueryError(error)
+    }
+}
+
+impl From<env::VarError> for ErrorKind {
+    fn from(error: env::VarError) -> Self {
+        ErrorKind::VarError(error)
     }
 }
 
@@ -45,6 +52,7 @@ impl fmt::Display for ErrorKind {
             ErrorKind::IOError(err) => err.to_string(),
             ErrorKind::DBError(err) => err.to_string(),
             ErrorKind::JWTError(err) => err.to_string(),
+            ErrorKind::VarError(err) => err.to_string(),
             ErrorKind::InvalidValue => "Invalid".to_string(),
         };
 

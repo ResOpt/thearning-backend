@@ -32,6 +32,15 @@ pub struct NewClassroom<'a> {
     pub file_name: Option<String>,
 }
 
+#[derive(FromForm)]
+pub struct UpdatableClassroom<'a> {
+    pub class_name: Option<String>,
+    pub section: Option<String>,
+    pub class_description: Option<String>,
+    pub image: Option<TempFile<'a>>,
+    pub file_name: Option<String>,
+}
+
 #[derive(
 Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable, Debug,
 )]

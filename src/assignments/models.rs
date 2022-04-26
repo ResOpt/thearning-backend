@@ -48,6 +48,12 @@ impl Assignment {
 
         assignments::table.find(&*self.assignment_id).get_result::<Self>(conn)
     }
+
+    pub fn load(class_id: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>> {
+        let a = assignments::table.filter(assignments::class_id.eq(class_id)).load::<Self>(conn)?;
+
+        Ok(a)
+    }
 }
 
 impl Default for Assignment {
