@@ -1,24 +1,23 @@
-use chrono::Local;
+use std::env;
+use chrono::{Duration, Local};
 use diesel::{Connection, PgConnection};
 use jsonwebtoken::{Algorithm, decode, DecodingKey, encode, EncodingKey, Header, Validation};
 use rocket::http::Status;
 use rocket::request::{self, FromRequest, Request};
 use serde::{Deserialize, Serialize};
 
-use crate::errors::{ErrorKind, ThearningResult};
+use crate::errors::{ErrorKind, JWTCError, ThearningResult};
 use crate::db::database_url;
 use crate::users::models::{Role, User};
 use crate::users::utils::is_email;
 
-pub(crate) const SECRET: &[u8] = include_bytes!("../secrets");
-const ONE_WEEK: usize = 60 * 60 * 24 * 7;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub(crate) struct Claims {
-    pub(crate) sub: String,
-    pub(crate) iat: usize,
-    pub(crate) role: String,
-    pub(crate) exp: usize,
+pub struct Claims {
+    pub sub: String,
+    pub iat: usize,
+    pub role: String,
+    pub exp: usize,
 }
 
 #[derive(Clone)]
@@ -26,6 +25,8 @@ pub struct ApiKey(pub String);
 
 pub fn generate_token(key: &String, role: &Role) -> ThearningResult<String> {
     let now = (Local::now().timestamp_nanos() / 1_000_000_00) as usize;
+
+    let exp = now + (Duration::days(7).num_milliseconds() as usize);
 
     let mut sub = key.clone();
     let db_conn = PgConnection::establish(&database_url())?;
@@ -38,11 +39,11 @@ pub fn generate_token(key: &String, role: &Role) -> ThearningResult<String> {
         sub,
         iat: now,
         role: role.to_string(),
-        exp: now + ONE_WEEK,
+        exp,
     };
 
     let header = Header::new(Algorithm::HS512);
-    Ok(encode(&header, &claims, &EncodingKey::from_secret(SECRET))?)
+    Ok(encode(&header, &claims, &EncodingKey::from_secret(env::var("SECRETS").unwrap().as_bytes()))?)
 }
 
 pub fn read_token(key: &str) -> ThearningResult<String> {
@@ -50,10 +51,14 @@ pub fn read_token(key: &str) -> ThearningResult<String> {
 
     match decode::<Claims>(
         key,
-        &DecodingKey::from_secret(SECRET.as_ref()),
+        &DecodingKey::from_secret(env::var("SECRETS").unwrap().as_bytes().as_ref()),
         &Validation::new(Algorithm::HS512),
     ) {
         Ok(v) => {
+
+            if now > v.claims.exp {
+                return Err(ErrorKind::JWTCreationError(JWTCError::TokenExpired))
+            }
             Ok(v.claims.sub)
         }
         Err(e) => Err(ErrorKind::from(e)),

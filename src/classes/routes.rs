@@ -101,7 +101,7 @@ fn create_classuser<T: ClassUser>(
         .map_err(|_| Status::BadRequest)
 }
 
-#[post("/<class_id>", rank = 2)]
+#[post("/<class_id>", rank = 1)]
 pub fn join(
     key: ApiKey,
     class_id: String,
@@ -194,7 +194,7 @@ fn topic(key: ApiKey, new_topic: Json<NewTopic>, connection: db::DbConn) -> Resu
     Ok(Json(json!({"status":200})))
 }
 
-#[get("/<class_id>", rank = 2)]
+#[get("/<class_id>", rank = 1)]
 fn class(key: ApiKey, class_id: String, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
 
     let class = Classroom::find(&class_id, &conn).unwrap();

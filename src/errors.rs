@@ -11,8 +11,28 @@ pub enum ErrorKind {
     IOError(std::io::Error),
     DBError(ConnectionError),
     JWTError(jsonwebtoken::errors::Error),
+    JWTCreationError(JWTCError),
     VarError(env::VarError),
     InvalidValue,
+}
+
+#[derive(Debug)]
+pub enum JWTCError {
+    TokenExpired,
+}
+
+impl fmt::Display for JWTCError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::TokenExpired => write!(f, "Token is expired!"),
+        }
+    }
+}
+
+impl From<JWTCError> for ErrorKind {
+    fn from(error: JWTCError) -> Self {
+        ErrorKind::JWTCreationError(error)
+    }
 }
 
 impl From<diesel::result::Error> for ErrorKind {
@@ -52,6 +72,7 @@ impl fmt::Display for ErrorKind {
             ErrorKind::IOError(err) => err.to_string(),
             ErrorKind::DBError(err) => err.to_string(),
             ErrorKind::JWTError(err) => err.to_string(),
+            ErrorKind::JWTCreationError(err) => err.to_string(),
             ErrorKind::VarError(err) => err.to_string(),
             ErrorKind::InvalidValue => "Invalid".to_string(),
         };

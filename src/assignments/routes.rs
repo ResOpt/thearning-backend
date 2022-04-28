@@ -1,14 +1,18 @@
-use rocket::http::Status;
+use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
+use rocket::http::{RawStr, Status};
 use rocket::serde::{Deserialize, Serialize};
 use rocket::serde::json::Json;
 use rocket::serde::json::serde_json::json;
 use rocket_dyn_templates::handlebars::JsonValue;
 
 use crate::assignments::models::{Assignment, FillableAssignments};
+use crate::attachments::models::Attachment;
 use crate::auth::ApiKey;
 use crate::db;
 use crate::db::DbConn;
 use crate::files::models::UploadedFile;
+use crate::schema::attachments;
+use crate::traits::Manipulable;
 use crate::utils::update;
 
 #[derive(Serialize, Deserialize)]
@@ -41,11 +45,31 @@ fn update_assignment(key: ApiKey, data: Json<AssignmentData>, conn: db::DbConn) 
     Ok(Json(json!({"new_assignment": new})))
 }
 
+#[delete("/<assignment_id>")]
+fn delete_assignment(key: ApiKey, assignment_id: String, conn: db::DbConn) -> Result<Status, Status> {
+    let assignment = match Assignment::get_by_id(&assignment_id, &conn) {
+        Ok(a) => a,
+        Err(_) => return Err(Status::NotFound)
+    };
+
+    assignment.delete(&conn).unwrap();
+
+    Ok(Status::Ok)
+}
+
 #[get("/<assignment_id>", rank = 2)]
-fn assignment(key: ApiKey, assignment_id: String, conn: DbConn) -> Result<Json<JsonValue>, Status> {
-    unimplemented!()
+fn assignment(key: ApiKey, assignment_id: &str, conn: DbConn) -> Result<Json<JsonValue>, Status> {
+
+    let assignment = match Assignment::get_by_id(&assignment_id.to_string(), &conn) {
+        Ok(a) => a,
+        Err(_) => return Err(Status::NotFound)
+    };
+
+    let files = attachments::table.filter(attachments::assignment_id.eq(assignment.assignment_id)).load::<Attachment>(&*conn).unwrap();
+
+    Ok(Json(json!({"files": files})))
 }
 
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
-    rocket.mount("/api/classroom/assignments", routes![draft, update_assignment])
+    rocket.mount("/api/assignments", routes![draft, update_assignment, assignment, delete_assignment])
 }

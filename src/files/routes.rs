@@ -52,7 +52,7 @@ pub async fn process_image<'a>(mut image: TempFile<'a>, upload_type: UploadType,
 
 pub async fn process_attachment<'a>(mut f: TempFile<'a>, ext: &str) -> ThearningResult<UploadedFile> {
     let url = env::var("SITE_URL").unwrap();
-    let file_id = generate_random_id().to_string();
+    let file_id = format!("{}{}", generate_random_id().to_string(), generate_random_id().to_string());
     let current_dir = std::env::current_dir()?;
     let file = format!("{}/{}/attachments/{}.{}", current_dir.display(), MEDIA_URL, &file_id, ext);
 
@@ -126,8 +126,8 @@ async fn upload_file<'a>(key: ApiKey, data: Form<AttachmentData<'a>>, conn: db::
 
     let new_attachment = FillableAttachment {
         file_id: new_file.file_id.as_str(),
-        assignment_id: None,
-        announcement_id: None,
+        assignment_id: data.assignment_id,
+        announcement_id: data.announcement_id,
         uploader: user.user_id.as_str(),
     };
 
