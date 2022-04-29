@@ -24,9 +24,12 @@ pub struct Claims {
 pub struct ApiKey(pub String);
 
 pub fn generate_token(key: &String, role: &Role) -> ThearningResult<String> {
-    let now = (Local::now().timestamp_nanos() / 1_000_000_00) as usize;
 
-    let exp = now + (Duration::days(7).num_milliseconds() as usize);
+    let dt = Local::now();
+
+    let now = dt.timestamp_nanos() as usize;
+
+    let exp = now + (Duration::days(7).num_nanoseconds().unwrap() as usize);
 
     let mut sub = key.clone();
     let db_conn = PgConnection::establish(&database_url())?;
@@ -47,7 +50,10 @@ pub fn generate_token(key: &String, role: &Role) -> ThearningResult<String> {
 }
 
 pub fn read_token(key: &str) -> ThearningResult<String> {
-    let now = (Local::now().timestamp_nanos() / 1_000_000_00) as usize;
+
+    let dt = Local::now();
+
+    let now = dt.timestamp_nanos() as usize;
 
     match decode::<Claims>(
         key,

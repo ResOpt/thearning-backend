@@ -8,6 +8,8 @@ extern crate diesel;
 extern crate rocket;
 extern crate rocket_cors;
 
+use std::env;
+
 use dotenv::dotenv;
 use rocket::http::Method;
 use rocket_cors::{AllowedHeaders, AllowedOrigins, Cors, CorsOptions};
@@ -43,7 +45,8 @@ fn allowed_origins() -> AllowedOrigins {
 
 #[cfg(not(debug_assertions))]
 fn allowed_origins() -> AllowedOrigins {
-    AllowedOrigins::some_exact(&["http://www.domain.tld", "http://127.0.0.1:5000"])
+    let domain = env::var("DOMAIN").unwrap();
+    AllowedOrigins::some_exact(&[domain.as_str()])
 }
 
 fn make_cors() -> Cors {
