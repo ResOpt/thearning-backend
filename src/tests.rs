@@ -255,7 +255,7 @@ mod tests {
 
         // Sending post request to create a new assignment
         let response_2 = client
-            .post("/api/classroom/assignments")
+            .post("/api/assignments")
             .header(ContentType::JSON)
             .header(Header::new(
                 "Authorization",

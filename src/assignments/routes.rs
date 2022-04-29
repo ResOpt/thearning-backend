@@ -57,7 +57,7 @@ fn delete_assignment(key: ApiKey, assignment_id: String, conn: db::DbConn) -> Re
     Ok(Status::Ok)
 }
 
-#[get("/<assignment_id>", rank = 2)]
+#[get("/<assignment_id>")]
 fn assignment(key: ApiKey, assignment_id: &str, conn: DbConn) -> Result<Json<JsonValue>, Status> {
 
     let assignment = match Assignment::get_by_id(&assignment_id.to_string(), &conn) {
