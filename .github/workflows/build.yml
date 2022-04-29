@@ -42,6 +42,7 @@ jobs:
           echo "DATABASE_URL_TEST=postgres://postgres:postgres@localhost/thearningtest" >> .env
           echo "SITE_URL=localhost:8000" >> .env
           export "PATH=~/.cargo/bin:$PATH"
+          echo "SECRETS=7N4SK1BX96xEOotwddzlJGoxn2HVLzFRp+wxuCJRgmM=" >> .env
           diesel migration run --database-url "postgres://postgres:postgres@localhost/thearningdb"
           diesel migration run --database-url "postgres://postgres:postgres@localhost/thearningtest"
       - name: Build
