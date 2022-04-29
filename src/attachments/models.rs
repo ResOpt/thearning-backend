@@ -5,8 +5,11 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::assignments::models::Assignment;
+use crate::errors::ThearningResult;
 use crate::files::models::UploadedFile;
+use crate::schema::assignments;
 use crate::schema::attachments;
+use crate::schema::attachments::attachment_id;
 use crate::users::models::User;
 use crate::utils::generate_random_id;
 
@@ -59,5 +62,13 @@ impl Attachment {
         attachments::table
             .find(new_attachment.attachment_id)
             .get_result::<Self>(conn)
+    }
+
+    pub fn load_by_assignment_id(assignment_id: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>> {
+        Ok(attachments::table.filter(attachments::attachment_id.eq(assignment_id)).load::<Self>(conn)?)
+    }
+
+    pub fn delete(&self, conn: &PgConnection) -> ThearningResult<Self> {
+        Ok(diesel::delete(attachments::table.filter(attachment_id.eq(&self.attachment_id))).get_result(conn)?)
     }
 }

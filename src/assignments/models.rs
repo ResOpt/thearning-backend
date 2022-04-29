@@ -50,7 +50,7 @@ impl Assignment {
     }
 
     pub fn load(class_id: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>> {
-        let a = assignments::table.filter(assignments::class_id.eq(class_id)).load::<Self>(conn)?;
+        let a = assignments::table.filter(assignments::class_id.eq(class_id)).filter(assignments::draft.eq(false)).load::<Self>(conn)?;
 
         Ok(a)
     }

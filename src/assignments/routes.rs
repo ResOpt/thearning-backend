@@ -54,6 +54,15 @@ fn delete_assignment(key: ApiKey, assignment_id: String, conn: db::DbConn) -> Re
 
     assignment.delete(&conn).unwrap();
 
+    let att = match Attachment::load_by_assignment_id(&assignment.assignment_id, &conn) {
+        Ok(v) => v,
+        Err(_) => return Err(Status::NotFound)
+    };
+
+    att.into_iter().for_each(|i| {
+        i.delete(&conn).unwrap();
+    });
+
     Ok(Status::Ok)
 }
 
