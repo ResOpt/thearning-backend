@@ -24,3 +24,5 @@ pub trait ClassUser
 
     fn find(uid: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>>;
 }
+
+pub trait Embedable {}

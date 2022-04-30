@@ -124,8 +124,11 @@ async fn upload_file<'a>(key: ApiKey, data: Form<AttachmentData<'a>>, conn: db::
         Err(_) => return Err(Status::BadRequest)
     };
 
+    let cloned_file = new_file.clone();
+
     let new_attachment = FillableAttachment {
-        file_id: new_file.file_id.as_str(),
+        file_id: Some(cloned_file.file_id),
+        link_id: None,
         assignment_id: data.assignment_id,
         announcement_id: data.announcement_id,
         uploader: user.user_id.as_str(),
@@ -136,7 +139,7 @@ async fn upload_file<'a>(key: ApiKey, data: Form<AttachmentData<'a>>, conn: db::
         &conn,
     ).unwrap();
 
-    let file = UploadedFile::receive(&attachment.file_id, &conn).unwrap();
+    let file = UploadedFile::receive(&attachment.file_id.as_ref().unwrap(), &conn).unwrap();
 
     Ok(Json(json!({"attachment": &attachment, "file": file})))
 }

@@ -9,6 +9,7 @@ extern crate rocket;
 extern crate rocket_cors;
 
 use std::env;
+use diesel::{Connection, PgConnection};
 
 use dotenv::dotenv;
 use rocket::http::Method;
@@ -19,6 +20,8 @@ use errors::mount as error_routes;
 use classes::routes as class_routes;
 use files::routes as file_routes;
 use users::routes as user_routes;
+use links::routes as link_routes;
+use crate::db::database_url;
 
 mod classes;
 mod users;
@@ -35,6 +38,7 @@ mod utils;
 mod errors;
 mod traits;
 mod pagination;
+mod links;
 
 const MEDIA_URL: &str = "media";
 
@@ -68,12 +72,15 @@ fn make_cors() -> Cors {
 
 #[launch]
 fn rocket() -> rocket::Rocket<rocket::Build> {
+
     dotenv().ok();
+
     let mut rocket = rocket::build().manage(db::init_pool());
     rocket = user_routes::mount(rocket);
     rocket = class_routes::mount(rocket);
     rocket = assignment_routes::mount(rocket);
     rocket = file_routes::mount(rocket);
+    rocket = link_routes::mount(rocket);
     rocket = error_routes(rocket).attach(make_cors());
     rocket
 }

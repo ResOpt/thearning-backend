@@ -4,7 +4,7 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::schema::files;
+use crate::{schema::files, traits::Embedable};
 
 pub enum FileType {
     MP4,
@@ -74,3 +74,5 @@ impl UploadedFile {
         files::table.filter(files::file_url.eq(url)).get_result::<Self>(conn)
     }
 }
+
+impl Embedable for UploadedFile {}

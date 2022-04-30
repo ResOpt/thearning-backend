@@ -37,7 +37,8 @@ table! {
 table! {
     attachments (attachment_id) {
         attachment_id -> Varchar,
-        file_id -> Varchar,
+        file_id -> Nullable<Varchar>,
+        link_id -> Nullable<Varchar>,
         assignment_id -> Nullable<Varchar>,
         announcement_id -> Nullable<Varchar>,
         uploader -> Varchar,
@@ -75,6 +76,16 @@ table! {
         file_path -> Varchar,
         file_url -> Varchar,
         filetype -> Varchar,
+        created_at -> Timestamp,
+    }
+}
+
+table! {
+    links (id) {
+        id -> Varchar,
+        title -> Nullable<Varchar>,
+        description -> Nullable<Varchar>,
+        url -> Nullable<Varchar>,
         created_at -> Timestamp,
     }
 }
@@ -154,6 +165,7 @@ joinable!(assignments -> topics (topic_id));
 joinable!(attachments -> announcements (announcement_id));
 joinable!(attachments -> assignments (assignment_id));
 joinable!(attachments -> files (file_id));
+joinable!(attachments -> links (link_id));
 joinable!(attachments -> users (uploader));
 joinable!(classes -> users (class_creator));
 joinable!(comments -> announcements (announcement_id));
@@ -178,6 +190,7 @@ allow_tables_to_appear_in_same_query!(
     classes,
     comments,
     files,
+    links,
     private_comments,
     students,
     submissions,

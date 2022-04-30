@@ -14,13 +14,9 @@ use crate::files::models::UploadedFile;
 use crate::schema::attachments;
 use crate::traits::Manipulable;
 use crate::utils::update;
+use crate::assignments::models::AssignmentData;
+use crate::traits::Embedable;
 
-#[derive(Serialize, Deserialize)]
-struct AssignmentData {
-    id: String,
-    assignment: FillableAssignments,
-    files: Option<Vec<String>>,
-}
 
 #[post("/")]
 fn draft(key: ApiKey, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {

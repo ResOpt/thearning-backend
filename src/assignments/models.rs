@@ -36,6 +36,13 @@ pub struct FillableAssignments {
     pub instructions: Option<String>,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct AssignmentData {
+    pub id: String,
+    pub assignment: FillableAssignments,
+    pub attachments: Option<Vec<String>>,
+}
+
 impl Assignment {
     pub fn get_by_id(id: &String, conn: &PgConnection) -> QueryResult<Self> {
         assignments::table.find(id).get_result::<Self>(conn)
