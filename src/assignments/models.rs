@@ -75,7 +75,7 @@ impl Default for Assignment {
             due_time: None,
             posted_date: NaiveDate::from(chrono::offset::Local::now().date().naive_local()),
             instructions: None,
-            total_marks: Some(100),
+            total_marks: None,
             created_at: Local::now().naive_local(),
             draft: true,
         }
