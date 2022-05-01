@@ -3,6 +3,9 @@
 #![allow(unused)]
 
 use reqwest;
+use scraper::{Html, Selector};
+
+pub mod data;
 
 pub struct UrlData {
     pub title: Option<String>,
@@ -15,16 +18,6 @@ impl Default for UrlData {
             title: None,
             content: None,
         }
-    }
-}
-
-impl UrlData {
-    pub fn get_title(&self, raw_data: &String) -> String {
-        todo!()
-    }
-
-    pub fn get_content(&self, raw_data: &String) -> String {
-        todo!()
     }
 }
 
