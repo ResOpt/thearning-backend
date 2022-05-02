@@ -79,42 +79,9 @@ impl Default for UrlData {
     }
 }
 
-impl From<data::YoutubeData> for UrlData {
-    fn from(data: data::YoutubeData) -> Self {
-    
-        let title = data.get_title();
-    
-        let content = data.get_content();
-    
-        let thumbnail = data.get_thumbnail();
-
-        Self {
-            title,
-            content,
-            thumbnail
-        }
-    }
-}
-
-impl From<data::WikipediaData> for UrlData {
-    fn from(data: data::WikipediaData) -> Self {
-    
-        let title = data.get_title();
-    
-        let content = data.get_content();
-    
-        let thumbnail = data.get_thumbnail();
-
-        Self {
-            title,
-            content,
-            thumbnail
-        }
-    }
-}
-
-impl From<data::OtherData> for UrlData {
-    fn from(data: data::OtherData) -> Self {
+impl<T> From<T> for UrlData
+where T: Scrapable {
+    fn from(data: T) -> Self {
     
         let title = data.get_title();
     
