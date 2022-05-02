@@ -1,6 +1,7 @@
 use rocket::fs::TempFile;
 use rocket::http::Status;
-use scrape_scrape::UrlData;
+use scrape_scrape::data::{YoutubeData, Scrapable, WikipediaData, OtherData};
+use scrape_scrape::{UrlData, get_raw_data, Url};
 use serde::{Serialize, Deserialize};
 use rocket::serde::json::Json;
 use rocket::serde::json::serde_json::json;
@@ -24,7 +25,7 @@ struct AttachmentData<'a> {
 }
 
 #[post("/", data = "<data>")]
-fn handle_link<'a>(key: ApiKey, data: Json<AttachmentData<'a>>, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
+async fn handle_link<'a>(key: ApiKey, data: Json<AttachmentData<'a>>, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
 
     let data = data.into_inner();
 
@@ -35,14 +36,34 @@ fn handle_link<'a>(key: ApiKey, data: Json<AttachmentData<'a>>, conn: db::DbConn
 
     let link_id = format!("{}{}", generate_random_id(), generate_random_id());
 
-    let url_data = UrlData::default();
+    let raw_data = get_raw_data(&data.url).await.unwrap();
 
-
+    let url_data = match Url::from(data.url) {
+        Url::Youtube => {
+            UrlData::from(YoutubeData {
+                raw_data
+            })
+        }
+        Url::Wikipedia => {
+            UrlData::from(
+            WikipediaData {
+                raw_data
+            })
+        }
+        Url::Other => {
+            UrlData::from(
+            OtherData {
+                raw_data
+            })
+        }
+    };
+    
 
     let link = Link {
         id: link_id,
         title: url_data.title,
         description: url_data.content,
+        thumbnail: url_data.thumbnail,
         url: Some(data.url.to_string()),
         created_at: Local::now().naive_local(),
     };

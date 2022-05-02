@@ -12,6 +12,7 @@ pub struct Link {
     pub id: String,
     pub title: Option<String>,
     pub description: Option<String>,
+    pub thumbnail: Option<String>,
     pub url: Option<String>,
     pub created_at: NaiveDateTime,
 }

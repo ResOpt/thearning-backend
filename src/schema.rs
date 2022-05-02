@@ -85,6 +85,7 @@ table! {
         id -> Varchar,
         title -> Nullable<Varchar>,
         description -> Nullable<Varchar>,
+        thumbnail -> Nullable<Varchar>,
         url -> Nullable<Varchar>,
         created_at -> Timestamp,
     }
@@ -119,7 +120,6 @@ table! {
         submitted_time -> Time,
         on_time -> Bool,
         marks_allotted -> Nullable<Int4>,
-        submission_file -> Nullable<Varchar>,
         created_at -> Timestamp,
     }
 }

@@ -6,7 +6,6 @@ CREATE TABLE submissions(
     submitted_time TIME NOT NULL,
     on_time BOOLEAN NOT NULL,
     marks_allotted INT,
-    submission_file VARCHAR,
     created_at TIMESTAMP NOT NULL,
 
     FOREIGN KEY (assignment_id) REFERENCES assignments(assignment_id) ON DELETE CASCADE ,

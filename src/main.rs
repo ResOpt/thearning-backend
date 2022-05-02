@@ -39,6 +39,7 @@ mod errors;
 mod traits;
 mod pagination;
 mod links;
+mod comments;
 
 const MEDIA_URL: &str = "media";
 

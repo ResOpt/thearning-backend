@@ -1,1 +1,2 @@
 .env linguist-language=Rust
+scripts linguist-language=Rust

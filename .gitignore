@@ -3,3 +3,4 @@
 media/
 .env
 scrape-scrape/target
+.vscode

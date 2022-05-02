@@ -15,8 +15,11 @@ pub struct Submissions {
     pub submitted_time: Option<NaiveTime>,
     pub on_time: bool,
     pub marks_allotted: Option<i32>,
-    pub submission_file: Option<String>,
     pub created_at: NaiveDateTime,
 }
 
-pub struct FillableSubmissions {}
+#[derive(Serialize, Deserialize)]
+pub struct FillableSubmissions {
+    pub assignment_id: String,
+    pub user_id: String,
+}
