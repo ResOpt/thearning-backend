@@ -100,3 +100,57 @@ where T: Scrapable {
 pub async fn get_raw_data(url: &str) -> Result<String, reqwest::Error> {
     Ok(reqwest::get(url).await?.text().await?)
 }
+
+#[cfg(test)]
+mod tests {
+
+    use tokio;
+
+    use crate::{UrlData, get_raw_data};
+    use crate::data::*;
+
+    #[tokio::test]
+    async fn get_youtube_data() {
+        let raw_data = get_raw_data("https://youtu.be/bN2iHlZTGgQ").await.unwrap();
+
+        let data = YoutubeData {
+            raw_data
+        };
+
+        let url_data = UrlData::from(data);
+
+        assert_eq!("EastNewSound \"死生信艶、暴謳ノ絶\"Vo nayuta【東方アレンジMV】", url_data.title.unwrap());
+        assert_eq!("【死生信艶、暴謳ノ絶】（ししょうしんえん、ぼうおうのぜつ）東方アレンジアルバム「Overkill Fury」Track.3Original:ZUN Vocal : nayuta　https://twitter.com/7utautaArrange : 黒鳥　https://twitter.com/ENS_Koku...", url_data.content.unwrap());
+        assert_eq!("https://i.ytimg.com/vi/bN2iHlZTGgQ/maxresdefault.jpg", url_data.thumbnail.unwrap());
+    }
+
+    #[tokio::test]
+    async fn get_wikipedia_data() {
+        let raw_data = get_raw_data("https://en.wikipedia.org/wiki/Touhou_Project").await.unwrap();
+
+        let data = WikipediaData {
+            raw_data
+        };
+
+        let url_data = UrlData::from(data);
+
+        assert_eq!("Touhou Project - Wikipedia", url_data.title.unwrap());
+        assert_eq!(None, url_data.content);
+        assert_eq!(None, url_data.thumbnail);
+    }
+
+    #[tokio::test]
+    async fn get_other_website_data() {
+        let raw_data = get_raw_data("https://touhou.fandom.com/wiki/Kanako_Yasaka").await.unwrap();
+
+        let data = WikipediaData {
+            raw_data
+        };
+
+        let url_data = UrlData::from(data);
+
+        assert_eq!("Kanako Yasaka", url_data.title.unwrap());
+        assert_eq!(None, url_data.content);
+        assert_eq!(None, url_data.thumbnail);
+    }
+}

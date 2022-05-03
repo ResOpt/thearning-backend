@@ -85,7 +85,15 @@ impl Scrapable for OtherData {
     }
 
     fn get_content(&self) -> Option<String> {
-        None
+        let docs = Document::from(self.raw_data.as_str());
+
+        match docs.find(Attr("property", "og:description")).into_iter().map(|x| x.attr("content")).collect::<Option<String>>() {
+            Some(desc) => Some(desc),
+            None => match docs.find(Attr("name", "description")).into_iter().map(|x| x.attr("content")).collect::<Option<String>>() {
+                Some(desc) => Some(desc),
+                None => None
+            }
+        }
     }
 
     fn get_thumbnail(&self) -> Option<String> {

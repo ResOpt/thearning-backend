@@ -48,8 +48,12 @@ jobs:
       - name: Build
         run: |
           cargo build
-      - name: Test
+      - name: Tests - Thearning
         run: |
           mkdir -p media/classes media/profiles media/attachments
           cargo test -- --test-threads 1
           rm -rf media
+      - name: Tests - scrape-scrape
+        run:
+          cd scrape-scrape
+          cargo test
