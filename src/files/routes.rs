@@ -50,17 +50,17 @@ pub async fn process_image<'a>(mut image: TempFile<'a>, upload_type: UploadType,
     Ok(url)
 }
 
-pub async fn process_attachment<'a>(mut f: TempFile<'a>, ext: &str) -> ThearningResult<UploadedFile> {
+pub async fn process_attachment<'a>(mut f: TempFile<'a>, name: &str, ext: &str) -> ThearningResult<UploadedFile> {
     let url = env::var("SITE_URL").unwrap();
     let file_id = format!("{}{}", generate_random_id().to_string(), generate_random_id().to_string());
     let current_dir = std::env::current_dir()?;
-    let file = format!("{}/{}/attachments/{}.{}", current_dir.display(), MEDIA_URL, &file_id, ext);
+    let file = format!("{}/{}/attachments/{}-{}.{}", current_dir.display(), MEDIA_URL, &file_id, name, ext);
 
-    let url = format!("{}/{}.{}", format!("http://{}/api/media/attachments", url), &file_id, ext);
+    let url = format!("{}/{}-{}.{}", format!("http://{}/api/media/attachments", url), &file_id, name, ext);
 
     let db_conn = PgConnection::establish(&database_url()).unwrap();
 
-    let up = UploadedFile::new(&file_id, &format!("{}.{}", &file_id, ext), &file, &url, &"image".to_string(), &db_conn).unwrap();
+    let up = UploadedFile::new(&file_id, &format!("{}.{}", name, ext), &file, &url, &"image".to_string(), &db_conn).unwrap();
 
     f.move_copy_to(&file).await?;
 
@@ -70,6 +70,7 @@ pub async fn process_attachment<'a>(mut f: TempFile<'a>, ext: &str) -> Thearning
 #[derive(FromForm)]
 struct AttachmentData<'a> {
     file: TempFile<'a>,
+    filename: Option<&'a str>,
     assignment_id: Option<&'a str>,
     announcement_id: Option<&'a str>,
     submission_id: Option<&'a str>,
@@ -95,24 +96,29 @@ async fn upload_file<'a>(key: ApiKey, data: Form<AttachmentData<'a>>, conn: db::
         None => return Err(Status::BadRequest)
     };
 
+    let name = match data.filename {
+        Some(n) => n,
+        None => "",
+    };
+
     let uploaded_file = match FileType::from_str(&ft) {
         FileType::MP4 => {
-            process_attachment(file, "mp4").await
+            process_attachment(file, name,"mp4").await
         }
         FileType::MKV => {
-            process_attachment(file, "mkv").await
+            process_attachment(file, name,"mkv").await
         }
         FileType::PDF => {
-            process_attachment(file, "pdf").await
+            process_attachment(file, name, "pdf").await
         }
         FileType::JPEG => {
-            process_attachment(file, "jpeg").await
+            process_attachment(file, name, "jpeg").await
         }
         FileType::WordDocument => {
-            process_attachment(file, "docx").await
+            process_attachment(file, name,"docx").await
         }
         FileType::ExcelDocument => {
-            process_attachment(file, "xlsx").await
+            process_attachment(file, name, "xlsx").await
         }
         _ => unimplemented!()
     };

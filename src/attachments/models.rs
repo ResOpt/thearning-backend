@@ -45,16 +45,10 @@ impl Attachment {
     ) -> QueryResult<Self> {
         let new_attachment = Self {
             attachment_id: generate_random_id().to_string(),
-            file_id: match new_data.file_id {
-                Some(v) => Some(v),
-                None => None,
-            },
-            link_id: match new_data.link_id {
-                Some(v) => Some(v),
-                None => None,
-            },
+            file_id: new_data.file_id,
+            link_id: new_data.link_id,
             assignment_id: match new_data.assignment_id {
-                Some(s) => Some(s.to_string()),
+                Some(v) => Some(v.to_string()),
                 None => None,
             },
             announcement_id: match new_data.announcement_id {

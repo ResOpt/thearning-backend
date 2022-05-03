@@ -8,7 +8,7 @@ use rocket::serde::json::serde_json::json;
 use rocket_dyn_templates::handlebars::JsonValue;
 use chrono::Local;
 
-use crate::attachments::models::FillableAttachment;
+use crate::attachments::models::{FillableAttachment, Attachment};
 use crate::auth::ApiKey;
 use crate::db;
 use crate::users::models::User;
@@ -83,7 +83,12 @@ async fn handle_link<'a>(key: ApiKey, data: Json<AttachmentData<'a>>, conn: db::
         uploader: user.user_id.as_str(),
     };
 
-    Ok(Json(json!({"link":create_link, "attachment": new_attachment})))
+    let attachment = match Attachment::create(new_attachment, &conn) {
+        Ok(v) => v,
+        Err(_) => return Err(Status::UnprocessableEntity)
+    };
+    
+    Ok(Json(json!({"link":create_link, "attachment": attachment})))
 
 }
 

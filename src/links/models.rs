@@ -17,6 +17,12 @@ pub struct Link {
     pub created_at: NaiveDateTime,
 }
 
+impl Link {
+    pub fn receive(id: &String, conn: &PgConnection) -> ThearningResult<Self> {
+        Ok(links::table.find(id).get_result::<Self>(conn)?)
+    }
+}
+
 impl Manipulable<Self> for Link {
     fn create(new_data: Self, conn: &PgConnection) -> ThearningResult<Self> {
         diesel::insert_into(links::table)

@@ -70,9 +70,10 @@ fn assignment(key: ApiKey, assignment_id: &str, conn: DbConn) -> Result<Json<Jso
         Err(_) => return Err(Status::NotFound)
     };
 
-    let files = attachments::table.filter(attachments::assignment_id.eq(assignment.assignment_id)).load::<Attachment>(&*conn).unwrap();
+    let attachments = attachments::table.filter(attachments::assignment_id.eq(&assignment.assignment_id)).load::<Attachment>(&*conn).unwrap();
 
-    Ok(Json(json!({"files": files})))
+
+    Ok(Json(json!({"attachments": attachments, "assignment": assignment})))
 }
 
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {

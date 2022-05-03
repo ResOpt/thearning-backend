@@ -197,7 +197,10 @@ fn topic(key: ApiKey, new_topic: Json<NewTopic>, connection: db::DbConn) -> Resu
 #[get("/<class_id>", rank = 1)]
 fn class(key: ApiKey, class_id: String, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
 
-    let class = Classroom::find(&class_id, &conn).unwrap();
+    let class = match Classroom::find(&class_id, &conn) {
+        Ok(c) => c,
+        Err(_) => return Err(Status::NotFound),
+    };
 
     let students = load_classuser::<Student>(&class_id, &conn);
     let admins = load_classuser::<Admin>(&class_id, &conn);
