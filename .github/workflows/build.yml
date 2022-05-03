@@ -55,5 +55,5 @@ jobs:
           rm -rf media
       - name: Tests - scrape-scrape
         run:
-          cd scrape-scrape
+          cd scrape-scrape;
           cargo test
