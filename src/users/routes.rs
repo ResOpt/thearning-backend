@@ -110,7 +110,14 @@ fn login(
     connection: db::DbConn,
 ) -> Result<Json<JsonValue>, Status> {
     let header: Header = Header::new(Algorithm::HS512);
-    let key = credentials.key.to_string();
+    let key = if is_email(&credentials.key.to_string()) {
+        match User::get_id_from_email(&credentials.key.to_string(), &connection) {
+            Ok(id) => id,
+            Err(_) => return Err(Status::NotFound),
+        }
+    } else {
+        credentials.key.to_string()
+    };
     let password = credentials.password.to_string();
 
     match User::get_by_key(&key, password, &connection) {
