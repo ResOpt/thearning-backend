@@ -143,14 +143,14 @@ mod tests {
     async fn get_other_website_data() {
         let raw_data = get_raw_data("https://touhou.fandom.com/wiki/Kanako_Yasaka").await.unwrap();
 
-        let data = WikipediaData {
+        let data = OtherData {
             raw_data
         };
 
         let url_data = UrlData::from(data);
 
-        assert_eq!("Kanako Yasaka", url_data.title.unwrap());
-        assert_eq!(None, url_data.content);
+        assert_eq!("Kanako Yasaka | Touhou Wiki | Fandom", url_data.title.unwrap());
+        assert_eq!("Kanako Yasaka is the final boss on Mountain of Faith. She is Moriya Shrine's official goddess because she defeated Suwako Moriya in the Great Suwa War. Even though she was victorious, she still let Suwako hang around the shrine because she considered her a \"fellow\" goddess. During the events of Mountain of Faith, Kanako ordered Sanae to shut down the Hakurei Shrine to make Moriya Shrine the dominant shrine, but failed because of the strength of Reimu and Marisa. Kanako gave Utsuho Reiuji nuclear", url_data.content.unwrap());
         assert_eq!(None, url_data.thumbnail);
     }
 }
