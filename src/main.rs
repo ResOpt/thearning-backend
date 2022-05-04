@@ -21,6 +21,7 @@ use classes::routes as class_routes;
 use files::routes as file_routes;
 use users::routes as user_routes;
 use links::routes as link_routes;
+use attachments::routes as att_routes;
 use crate::db::database_url;
 
 mod classes;
@@ -83,5 +84,6 @@ fn rocket() -> rocket::Rocket<rocket::Build> {
     rocket = file_routes::mount(rocket);
     rocket = link_routes::mount(rocket);
     rocket = error_routes(rocket).attach(make_cors());
+    rocket = att_routes::mount(rocket);
     rocket
 }

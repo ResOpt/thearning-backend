@@ -9,7 +9,7 @@ use crate::assignments::models::Assignment;
 use crate::errors::ThearningResult;
 use crate::files::models::UploadedFile;
 use crate::schema::assignments;
-use crate::schema::attachments;
+use crate::schema::{attachments, files, links};
 use crate::schema::attachments::attachment_id;
 use crate::users::models::User;
 use crate::utils::generate_random_id;
@@ -68,11 +68,32 @@ impl Attachment {
             .get_result::<Self>(conn)
     }
 
+    pub fn find(id: &str, conn: &PgConnection) -> ThearningResult<Self> {
+        Ok(attachments::table.find(id).get_result::<Self>(conn)?)
+    }
+
     pub fn load_by_assignment_id(assignment_id: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>> {
-        Ok(attachments::table.filter(attachments::attachment_id.eq(assignment_id)).load::<Self>(conn)?)
+        Ok(attachments::table.filter(attachments::assignment_id.eq(assignment_id)).load::<Self>(conn)?)
     }
 
     pub fn delete(&self, conn: &PgConnection) -> ThearningResult<Self> {
+        match &self.file_id {
+          Some(id) => {
+            diesel::delete(files::table.filter(files::file_id.eq(id))).execute(conn);
+        }  
+          None => {
+              ()
+          }
+        }
+        match &self.link_id {
+            Some(id) => {
+                diesel::delete(links::table.filter(links::id.eq(id.trim()))).execute(conn);
+            }
+            None => {
+                ()
+            }
+        }       
+        
         Ok(diesel::delete(attachments::table.filter(attachment_id.eq(&self.attachment_id))).get_result(conn)?)
     }
 }
