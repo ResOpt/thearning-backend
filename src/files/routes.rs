@@ -50,7 +50,7 @@ pub async fn process_image<'a>(mut image: TempFile<'a>, upload_type: UploadType,
     Ok(url)
 }
 
-pub async fn process_attachment<'a>(mut f: TempFile<'a>, name: &str, ext: &str) -> ThearningResult<UploadedFile> {
+pub async fn process_attachment<'a>(mut f: TempFile<'a>, name: &str, ext: &str, ft: FileType) -> ThearningResult<UploadedFile> {
     let url = env::var("SITE_URL").unwrap();
     let file_id = format!("{}{}", generate_random_id().to_string(), generate_random_id().to_string());
     let current_dir = std::env::current_dir()?;
@@ -60,7 +60,7 @@ pub async fn process_attachment<'a>(mut f: TempFile<'a>, name: &str, ext: &str) 
 
     let db_conn = PgConnection::establish(&database_url()).unwrap();
 
-    let up = UploadedFile::new(&file_id, &format!("{}.{}", name, ext), &file, &url, &"image".to_string(), &db_conn).unwrap();
+    let up = UploadedFile::new(&file_id, &format!("{}.{}", name, ext), &file, &url, &ft.to_string(), &db_conn).unwrap();
 
     f.move_copy_to(&file).await?;
 
@@ -87,9 +87,9 @@ async fn upload_file<'a>(key: ApiKey, data: Form<AttachmentData<'a>>, conn: db::
 
     let file = data.file;
 
-    let filetype = &file.content_type();
+    let file_content_type = &file.content_type();
 
-    let ft = match filetype {
+    let ft = match file_content_type {
         Some(t) => {
             t.to_string()
         }
@@ -101,27 +101,12 @@ async fn upload_file<'a>(key: ApiKey, data: Form<AttachmentData<'a>>, conn: db::
         None => "",
     };
 
-    let uploaded_file = match FileType::from_str(&ft) {
-        FileType::MP4 => {
-            process_attachment(file, name,"mp4").await
-        }
-        FileType::MKV => {
-            process_attachment(file, name,"mkv").await
-        }
-        FileType::PDF => {
-            process_attachment(file, name, "pdf").await
-        }
-        FileType::JPEG => {
-            process_attachment(file, name, "jpeg").await
-        }
-        FileType::WordDocument => {
-            process_attachment(file, name,"docx").await
-        }
-        FileType::ExcelDocument => {
-            process_attachment(file, name, "xlsx").await
-        }
-        _ => unimplemented!()
-    };
+    let filetype = match FileType::from_str(&ft) {
+        Ok(v) => v,
+        Err(_) => return Err(Status::BadRequest),
+    };  
+
+    let uploaded_file = process_attachment(file, name, filetype.ext(), filetype).await;
 
     let new_file = match uploaded_file {
         Ok(v) => {

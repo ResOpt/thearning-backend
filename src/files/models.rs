@@ -4,7 +4,9 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::{schema::files, traits::Embedable};
+use std::fmt;
+
+use crate::{schema::files, traits::Embedable, errors::ErrorKind};
 
 pub enum FileType {
     MP4,
@@ -12,6 +14,9 @@ pub enum FileType {
     JPEG,
     PNG,
     PDF,
+    Text,
+    RAR,
+    ZIP,
     WordDocument,
     ExcelDocument,
 }
@@ -23,20 +28,56 @@ pub enum UploadType {
 }
 
 impl FileType {
-    pub fn from_str(filetype: &str) -> Self {
+    pub fn from_str(filetype: &str) -> Result<Self, ErrorKind> {
         match filetype {
-            "video/mp4" => Self::MP4,
-            "video/x-matroska" => Self::MKV,
-            "image/jpeg" => Self::JPEG,
-            "image/png" => Self::PNG,
-            "application/pdf" => Self::PDF,
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => Self::WordDocument,
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => Self::ExcelDocument,
-            _ => unimplemented!()
+            "video/mp4" => Ok(Self::MP4),
+            "video/x-matroska" => Ok(Self::MKV),
+            "image/jpeg" => Ok(Self::JPEG),
+            "image/png" => Ok(Self::PNG),
+            "application/pdf" => Ok(Self::PDF),
+            "text/plain" => Ok(Self::Text),
+            "application/vnd.rar" => Ok(Self::RAR),
+            "application/zip" => Ok(Self::ZIP),
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => Ok(Self::WordDocument),
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => Ok(Self::ExcelDocument),
+            _ => Err(ErrorKind::InvalidValue)
+        }
+    }
+
+    pub fn ext(&self) -> &'static str {
+        match &self {
+            Self::MP4 => "mp4",
+            Self::MKV => "mkv",
+            Self::JPEG => "jpeg",
+            Self::PNG => "png",
+            Self::PDF => "pdf",
+            Self::Text => "txt",
+            Self::RAR => "rar",
+            Self::ZIP => "zip",
+            Self::WordDocument => "docx",
+            Self::ExcelDocument => "xlsx",
         }
     }
 }
 
+impl fmt::Display for FileType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let filetype = match &self {
+            Self::MP4 => "mp4",
+            Self::MKV => "matroshka",
+            Self::JPEG => "jpeg",
+            Self::PNG => "png",
+            Self::PDF => "pdf",
+            Self::Text => "text",
+            Self::RAR => "rar",
+            Self::ZIP => "zip",
+            Self::WordDocument => "docx",
+            Self::ExcelDocument => "xlsx",
+        };
+
+        write!(f, "{}", filetype)
+    }
+}
 #[derive(Serialize, Deserialize, AsChangeset, Insertable, Associations, Clone, Queryable)]
 #[table_name = "files"]
 pub struct UploadedFile {
