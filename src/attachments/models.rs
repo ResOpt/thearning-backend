@@ -14,7 +14,7 @@ use crate::schema::attachments::attachment_id;
 use crate::users::models::User;
 use crate::utils::generate_random_id;
 
-#[derive(Serialize, Deserialize, Queryable, Insertable, Associations)]
+#[derive(Serialize, Deserialize, Queryable, Insertable, Associations, Clone)]
 #[belongs_to(User, foreign_key = "uploader")]
 #[belongs_to(Assignment, foreign_key = "assignment_id")]
 #[belongs_to(UploadedFile, foreign_key = "file_id")]

@@ -63,6 +63,14 @@ fn delete_assignment(key: ApiKey, assignment_id: String, conn: db::DbConn) -> Re
     Ok(Status::Ok)
 }
 
+#[derive(Serialize)]
+struct AssignmentResponse {
+    attachment: Attachment,
+    file: Option<UploadedFile>,
+    link: Option<Link>,
+}
+
+
 #[get("/<assignment_id>")]
 fn assignment(key: ApiKey, assignment_id: &str, conn: DbConn) -> Result<Json<JsonValue>, Status> {
 
@@ -73,25 +81,28 @@ fn assignment(key: ApiKey, assignment_id: &str, conn: DbConn) -> Result<Json<Jso
 
     let attachments = attachments::table.filter(attachments::assignment_id.eq(&assignment.assignment_id)).load::<Attachment>(&*conn).unwrap();
 
-    let links = attachments.iter().filter(|x| x.link_id.is_some()).collect::<Vec<&Attachment>>();
+    let mut vec = Vec::new();
 
-    let files = attachments.iter().filter(|x| x.file_id.is_some()).collect::<Vec<&Attachment>>();
+    for thing in attachments {
+        let resp = AssignmentResponse {
+            attachment: thing.clone(),
+            file: match &thing.file_id {
+                Some(id) => {
+                    Some(UploadedFile::receive(id, &conn).unwrap())
+                }
+                None => None,
+            },
+            link: match &thing.link_id {
+                Some(id) => {
+                    Some(Link::receive(id, &conn).unwrap())
+                }
+                None => None
+            },
+        };
+        vec.push(resp)
+    }
 
-    let mut files_vec = Vec::new();
-
-    let mut links_vec = Vec::new();
-
-    files.iter().for_each(|x| {
-        let rec = UploadedFile::receive(x.file_id.as_ref().unwrap(), &conn).unwrap();
-        files_vec.push(rec);
-    });
-
-    links.iter().for_each(|i| {
-        let rec = Link::receive(&i.link_id.as_ref().unwrap(), &conn).unwrap();
-        links_vec.push(rec);
-    });
-
-    Ok(Json(json!({"links": links_vec, "files": files_vec, "assignment": assignment})))
+    Ok(Json(json!({"attachments": vec, "assignment": assignment})))
 }
 
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
