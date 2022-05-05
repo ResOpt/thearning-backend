@@ -11,6 +11,7 @@ use crate::auth::ApiKey;
 use crate::db;
 use crate::db::DbConn;
 use crate::files::models::UploadedFile;
+use crate::links::models::Link;
 use crate::schema::attachments;
 use crate::traits::Manipulable;
 use crate::utils::update;
@@ -72,8 +73,25 @@ fn assignment(key: ApiKey, assignment_id: &str, conn: DbConn) -> Result<Json<Jso
 
     let attachments = attachments::table.filter(attachments::assignment_id.eq(&assignment.assignment_id)).load::<Attachment>(&*conn).unwrap();
 
+    let links = attachments.iter().filter(|x| x.link_id.is_some()).collect::<Vec<&Attachment>>();
 
-    Ok(Json(json!({"attachments": attachments, "assignment": assignment})))
+    let files = attachments.iter().filter(|x| x.file_id.is_some()).collect::<Vec<&Attachment>>();
+
+    let mut files_vec = Vec::new();
+
+    let mut links_vec = Vec::new();
+
+    files.iter().for_each(|x| {
+        let rec = UploadedFile::receive(x.file_id.as_ref().unwrap(), &conn).unwrap();
+        files_vec.push(rec);
+    });
+
+    links.iter().for_each(|i| {
+        let rec = Link::receive(&i.link_id.as_ref().unwrap(), &conn).unwrap();
+        links_vec.push(rec);
+    });
+
+    Ok(Json(json!({"links": links_vec, "files": files_vec, "assignment": assignment})))
 }
 
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
