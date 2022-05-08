@@ -122,6 +122,7 @@ async fn upload_file<'a>(key: ApiKey, data: Form<AttachmentData<'a>>, conn: db::
         link_id: None,
         assignment_id: data.assignment_id,
         announcement_id: data.announcement_id,
+        submission_id: data.submission_id,
         uploader: user.user_id.as_str(),
     };
 

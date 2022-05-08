@@ -197,7 +197,47 @@ impl User {
     pub fn is_teacher(&self) -> bool {
         self.status == "teacher"
     }
+
+    pub fn is_student(&self) -> bool {
+        self.status == "student"
+    }
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct ResponseUser {
+    pub user_id: String,
+    pub fullname: String,
+    pub profile_photo: String,
+    pub email: String,
+    pub birth_place: String,
+    pub birth_date: NaiveDate,
+    pub bio: String,
+    pub status: String,
+    pub created_at: NaiveDateTime,
+}
+
+impl FromIterator<User> for Vec<ResponseUser> {
+    fn from_iter<I: IntoIterator<Item=User>>(iter: I) -> Self {
+        let mut c = Self::new();
+
+        for i in iter {
+            c.push(ResponseUser {
+                user_id: i.user_id,
+                fullname: i.fullname,
+                profile_photo: i.profile_photo,
+                email: i.email,
+                birth_place: i.birth_place,
+                birth_date: i.birth_date,
+                bio: i.bio,
+                status: i.status,
+                created_at: i.created_at,
+            });
+        }
+
+        c
+    }
+}
+
 
 impl Manipulable<Self> for User {
     fn create(new_data: Self, conn: &PgConnection) -> ThearningResult<Self> {

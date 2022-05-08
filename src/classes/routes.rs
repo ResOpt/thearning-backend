@@ -22,7 +22,7 @@ use crate::files::routes;
 use crate::schema::classes;
 use crate::schema::users;
 use crate::traits::{ClassUser, Manipulable};
-use crate::users::models::{Admin, Role, Student, Teacher, User};
+use crate::users::models::{Admin, Role, Student, Teacher, User, ResponseUser};
 use crate::utils::{load_classuser, update};
 
 #[post("/", data = "<new_class>", rank = 1)]
@@ -202,19 +202,14 @@ fn class(key: ApiKey, class_id: String, conn: db::DbConn) -> Result<Json<JsonVal
         Err(_) => return Err(Status::NotFound),
     };
 
-    let students = load_classuser::<Student>(&class_id, &conn);
-    let admins = load_classuser::<Admin>(&class_id, &conn);
-    let teachers = load_classuser::<Teacher>(&class_id, &conn);
+    let students = load_classuser::<Student>(&class_id, &conn).iter().map(|x| User::find_user(&x.user_id, &conn).unwrap()).collect::<Vec<ResponseUser>>();
+    let admins = load_classuser::<Admin>(&class_id, &conn).iter().map(|x| User::find_user(&x.user_id, &conn).unwrap()).collect::<Vec<ResponseUser>>();
+    let teachers = load_classuser::<Teacher>(&class_id, &conn).iter().map(|x| User::find_user(&x.user_id, &conn).unwrap()).collect::<Vec<ResponseUser>>();
 
     let assignments = Assignment::load(&class.class_id, &conn).unwrap();
 
     Ok(Json(json!({"class": class, "students": students, "admins": admins, "teachers": teachers, "assignments":assignments})))
 }
-
-// #[patch("/<class_id>", rank = 2)]
-// fn update_class(key: ApiKey, new_data: NewClassroom, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
-//     unimplemented!()
-// }
 
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     rocket.mount(

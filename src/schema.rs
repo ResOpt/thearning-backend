@@ -41,6 +41,7 @@ table! {
         link_id -> Nullable<Varchar>,
         assignment_id -> Nullable<Varchar>,
         announcement_id -> Nullable<Varchar>,
+        submission_id -> Nullable<Varchar>,
         uploader -> Varchar,
         created_at -> Timestamp,
     }
@@ -116,10 +117,11 @@ table! {
         submission_id -> Varchar,
         assignment_id -> Varchar,
         user_id -> Varchar,
-        submitted_date -> Date,
-        submitted_time -> Time,
-        on_time -> Bool,
+        submitted_date -> Nullable<Date>,
+        submitted_time -> Nullable<Time>,
+        on_time -> Nullable<Bool>,
         marks_allotted -> Nullable<Int4>,
+        submitted -> Bool,
         created_at -> Timestamp,
     }
 }
@@ -166,6 +168,7 @@ joinable!(attachments -> announcements (announcement_id));
 joinable!(attachments -> assignments (assignment_id));
 joinable!(attachments -> files (file_id));
 joinable!(attachments -> links (link_id));
+joinable!(attachments -> submissions (submission_id));
 joinable!(attachments -> users (uploader));
 joinable!(classes -> users (class_creator));
 joinable!(comments -> announcements (announcement_id));

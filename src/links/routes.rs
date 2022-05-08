@@ -80,6 +80,7 @@ async fn handle_link<'a>(key: ApiKey, data: Json<AttachmentData<'a>>, conn: db::
         link_id: Some(link.id),
         assignment_id: data.assignment_id,
         announcement_id: data.announcement_id,
+        submission_id: data.submission_id,
         uploader: user.user_id.as_str(),
     };
 

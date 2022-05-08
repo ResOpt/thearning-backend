@@ -25,6 +25,7 @@ pub struct Attachment {
     pub link_id: Option<String>,
     pub assignment_id: Option<String>,
     pub announcement_id: Option<String>,
+    pub submission_id: Option<String>,
     pub uploader: String,
     pub created_at: NaiveDateTime,
 }
@@ -35,6 +36,7 @@ pub struct FillableAttachment<'a> {
     pub link_id: Option<String>,
     pub assignment_id: Option<&'a str>,
     pub announcement_id: Option<&'a str>,
+    pub submission_id: Option<&'a str>,
     pub uploader: &'a str,
 }
 
@@ -52,6 +54,10 @@ impl Attachment {
                 None => None,
             },
             announcement_id: match new_data.announcement_id {
+                Some(s) => Some(s.to_string()),
+                None => None,
+            },
+            submission_id: match new_data.submission_id {
                 Some(s) => Some(s.to_string()),
                 None => None,
             },
