@@ -14,8 +14,8 @@ use crate::db::DbConn;
 use crate::files::models::UploadedFile;
 use crate::links::models::Link;
 use crate::schema::attachments;
-use crate::traits::Manipulable;
-use crate::users::models::User;
+use crate::traits::{Manipulable, ClassUser};
+use crate::users::models::{User, Student};
 use crate::utils::{update, generate_random_id};
 use crate::assignments::models::AssignmentData;
 use crate::traits::Embedable;
@@ -32,12 +32,25 @@ pub fn draft(key: ApiKey, class_id: &str, conn: db::DbConn) -> Result<Json<JsonV
 }
 
 #[patch("/<class_id>/assignments", data = "<data>")]
-pub fn update_assignment(key: ApiKey, class_id: &str, data: Json<AssignmentData>, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
+pub async fn update_assignment(key: ApiKey, class_id: &str, data: Json<AssignmentData>, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
     let data = data.into_inner();
 
     let assignment = match Assignment::get_by_id(&data.id, &conn) {
         Ok(v) => v,
         Err(_) => return Err(Status::NotFound),
+    };
+
+    let students = Student::load_in_class(&class_id.to_string(), &conn).unwrap();
+ 
+    for i in students {
+        let new_submission = FillableSubmissions {
+            assignment_id: assignment.assignment_id.clone(),
+            user_id: i.user_id,
+        };
+        match Submissions::create(new_submission, &conn) {
+            Ok(s) => (),
+            Err(_) => return Err(Status::InternalServerError),
+        }
     };
 
     let new = update(assignment, data.assignment, &conn).unwrap();
@@ -118,22 +131,7 @@ pub fn students_assignment(key: ApiKey, class_id: &str, assignment_id: &str, con
 
     let assignment_attachments = attachments::table.filter(attachments::assignment_id.eq(&assignment.assignment_id)).load::<Attachment>(&*conn).unwrap();
 
-    let submission = match Submissions::get_by_id(&assignment_id.to_string(), &user.user_id, &conn) {
-        Ok(sub) => {
-            sub
-        }
-        Err(_) => {
-            let new_submission = FillableSubmissions {
-                assignment_id: assignment.assignment_id.clone(),
-                user_id: user.user_id,
-            };
-
-           match Submissions::create(new_submission, &conn) {
-               Ok(s) => s,
-               Err(_) => return Err(Status::InternalServerError)
-           }
-        }
-    };
+    let submission = Submissions::get_by_id(&assignment_id.to_string(), &user.user_id, &conn).unwrap();
 
     let submission_attachments = attachments::table.filter(attachments::submission_id.eq(&submission.submission_id)).load::<Attachment>(&*conn).unwrap();
 

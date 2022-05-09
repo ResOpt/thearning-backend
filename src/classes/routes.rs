@@ -17,6 +17,7 @@ use crate::classes::models::{Classroom, NewClassroom, NewTopic, Topic};
 use crate::classes::utils::{generate_class_code, get_class_codes};
 use crate::db;
 use crate::db::DbConn;
+use crate::errors::ThearningResult;
 use crate::files::models::UploadType;
 use crate::files::routes;
 use crate::schema::classes;
@@ -25,6 +26,7 @@ use crate::traits::{ClassUser, Manipulable};
 use crate::users::models::{Admin, Role, Student, Teacher, User, ResponseUser};
 use crate::utils::{load_classuser, update};
 use crate::assignments::routes::*;
+use crate::submissions::models::{Submissions, FillableSubmissions};
 
 #[post("/", data = "<new_class>", rank = 1)]
 async fn create_classroom<'a>(
@@ -96,10 +98,8 @@ fn create_classuser<T: ClassUser>(
     key: &String,
     class_id: &String,
     conn: &DbConn,
-) -> Result<Json<JsonValue>, Status> {
+) -> ThearningResult<T> {
     T::create(key, class_id, conn)
-        .map(|_| Json(json!({"status":200 as i32})))
-        .map_err(|_| Status::BadRequest)
 }
 
 #[post("/<class_id>", rank = 1)]
@@ -116,9 +116,37 @@ pub fn join(
 
     if let Ok(r) = User::get_role(&key.0, &connection) {
         match r {
-            Role::Student => create_classuser::<Student>(&key.0, &class_id, &connection),
-            Role::Teacher => create_classuser::<Teacher>(&key.0, &class_id, &connection),
-            Role::Admin => create_classuser::<Admin>(&key.0, &class_id, &connection),
+            Role::Student => {
+                let student = match create_classuser::<Student>(&key.0, &class_id, &connection) {
+                    Ok(u) => u,
+                    Err(_) => return Err(Status::NotFound),
+                };
+                let assignments = Assignment::load(&class_id, &connection).unwrap();
+
+                if !assignments.is_empty() {
+                    for i in assignments {
+                        let new_submission = FillableSubmissions {
+                            assignment_id: i.assignment_id,
+                            user_id: student.user_id.clone(),
+                        };
+                        Submissions::create(new_submission, &connection);
+                    }
+                }
+
+                Ok(Json(json!({"status":200})))
+            },
+            Role::Teacher => {
+                match create_classuser::<Teacher>(&key.0, &class_id, &connection) {
+                    Ok(c) => Ok(Json(json!({"status":200}))),
+                    Err(_) => Err(Status::Conflict)
+                }
+            },
+            Role::Admin => {
+                match create_classuser::<Admin>(&key.0, &class_id, &connection) {
+                    Ok(c) => Ok(Json(json!({"status":200}))),
+                    Err(_) => Err(Status::Conflict)
+                }
+            }
         }
     } else {
         Err(Status::BadRequest)

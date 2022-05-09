@@ -24,6 +24,7 @@ mod tests {
     use crate::schema::users::dsl::users as users_object;
     use crate::traits::ClassUser;
     use crate::users::models::Student;
+    use crate::submissions::models::Submissions;
 
     use self::diesel::prelude::*;
 
@@ -68,6 +69,7 @@ mod tests {
     #[derive(Deserialize)]
     struct AssignmentData {
         assignment: Assignment,
+        submission: Submissions,
         assignment_attachments: Vec<AttachmentData>,
     }
 
@@ -225,48 +227,9 @@ mod tests {
         assert_eq!(!r.class_id.is_empty(), true);
     }
 
-    #[test]
-    fn t_5_join_classroom() {
-
-        let client = client();
-
-        let teacher_token = auth_request().1.token;
-
-        let token = auth_request().0.token;
-
-        // Sending get request to get classrooms the user attends
-        let response_1 = client
-            .get("/api/classroom")
-            .header(Header::new(
-                "Authorization",
-                format!("Bearer {}", teacher_token),
-            ))
-            .dispatch();
-
-        // Deserialize it into a struct
-        let r = response_1.into_json::<ClassIds>().unwrap();
-
-        let classrooms = r.class_ids;
-
-        // Getting a sample class id
-        let sample_class = classrooms.first().unwrap();
-
-        let class_id = &sample_class.class_id;
-
-        let response_2 = client
-        .post(format!("/api/classroom/{}", class_id))
-        .header(Header::new(
-            "Authorization",
-            format!("Bearer {}", token.clone()),
-        ))
-        .dispatch();
-
-        // Is the student creation success?
-        assert_eq!(response_2.status(), Status::Ok);
-    }
 
     #[test]
-    fn t_6_create_assignment() {
+    fn t_5_create_assignment() {
         let client = client();
 
         let token = auth_request().1.token;
@@ -336,7 +299,49 @@ mod tests {
     }
 
     #[test]
+    fn t_6_join_classroom() {
+
+        let client = client();
+
+        let teacher_token = auth_request().1.token;
+
+        let token = auth_request().0.token;
+
+        // Sending get request to get classrooms the user attends
+        let response_1 = client
+            .get("/api/classroom")
+            .header(Header::new(
+                "Authorization",
+                format!("Bearer {}", teacher_token),
+            ))
+            .dispatch();
+
+        // Deserialize it into a struct
+        let r = response_1.into_json::<ClassIds>().unwrap();
+
+        let classrooms = r.class_ids;
+
+        // Getting a sample class id
+        let sample_class = classrooms.first().unwrap();
+
+        let class_id = &sample_class.class_id;
+
+        let response_2 = client
+        .post(format!("/api/classroom/{}", class_id))
+        .header(Header::new(
+            "Authorization",
+            format!("Bearer {}", token.clone()),
+        ))
+        .dispatch();
+
+        // Is the student creation success?
+        assert_eq!(response_2.status(), Status::Ok);
+    }
+
+    #[test]
     fn t_7_get_student_assignments() {
+
+        let db_conn = PgConnection::establish(&database_url()).unwrap();
 
         let client = client();
 
@@ -347,7 +352,7 @@ mod tests {
             .get("/api/classroom")
             .header(Header::new(
                 "Authorization",
-                format!("Bearer {}", token.clone()),
+                format!("Bearer {}", &token),
             ))
             .dispatch();
 
@@ -365,7 +370,7 @@ mod tests {
             .header(ContentType::JSON)
             .header(Header::new(
                 "Authorization",
-                format!("Bearer {}", token.clone()),
+                format!("Bearer {}", &token),
             ))
             .dispatch();
 
@@ -374,18 +379,22 @@ mod tests {
 
         let assignment = r_2.assignments.first().unwrap();
 
+        let submission = Submissions::get_by_assignment(&assignment.assignment_id, &db_conn).unwrap();
+
         // Sending get request to get classrooms the user attends
         let response_3 = client
             .get(format!("/api/classroom/{}/assignments/students/{}", &sample_class.class_id, &assignment.assignment_id))
             .header(Header::new(
                 "Authorization",
-                format!("Bearer {}", token.clone()),
+                format!("Bearer {}", &token),
             ))
             .dispatch();
 
         let r_3 = response_3.into_json::<AssignmentData>().unwrap();
 
-        assert_eq!(r_3.assignment.assignment_id, assignment.assignment_id)
+        assert_eq!(r_3.assignment.assignment_id, assignment.assignment_id);
+        assert_eq!(r_3.submission.submission_id, submission.submission_id);
+        assert_eq!(r_3.submission.user_id, read_token(&token).unwrap());
     }
 
     #[test]
