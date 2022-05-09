@@ -1,3 +1,5 @@
+use std::fs;
+
 use std::ops::Deref;
 use chrono::{Local, NaiveDateTime};
 use diesel;
@@ -85,6 +87,8 @@ impl Attachment {
     pub fn delete(&self, conn: &PgConnection) -> ThearningResult<Self> {
         match &self.file_id {
           Some(id) => {
+            let file = UploadedFile::receive(id, conn)?;
+            fs::remove_file(file.file_path)?;
             diesel::delete(files::table.filter(files::file_id.eq(id))).execute(conn);
         }  
           None => {

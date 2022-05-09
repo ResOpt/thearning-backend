@@ -24,6 +24,7 @@ use crate::schema::users;
 use crate::traits::{ClassUser, Manipulable};
 use crate::users::models::{Admin, Role, Student, Teacher, User, ResponseUser};
 use crate::utils::{load_classuser, update};
+use crate::assignments::routes::*;
 
 #[post("/", data = "<new_class>", rank = 1)]
 async fn create_classroom<'a>(
@@ -214,6 +215,6 @@ fn class(key: ApiKey, class_id: String, conn: db::DbConn) -> Result<Json<JsonVal
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     rocket.mount(
         "/api/classroom",
-        routes![create_classroom, join, classrooms, topic, class],
+        routes![create_classroom, join, classrooms, topic, class, draft, update_assignment, delete_assignment, students_assignment, teachers_assignment],
     )
 }

@@ -12,7 +12,7 @@ use std::env;
 use diesel::{Connection, PgConnection};
 
 use dotenv::dotenv;
-use rocket::http::Method;
+use rocket::http::{Method, Status};
 use rocket_cors::{AllowedHeaders, AllowedOrigins, Cors, CorsOptions};
 
 use assignments::routes as assignment_routes;
@@ -73,15 +73,21 @@ fn make_cors() -> Cors {
         .expect("error while building CORS")
 }
 
+#[options("/<_..>")]
+fn handle_cors() -> Status {
+    Status::Ok
+}
+
 #[launch]
 fn rocket() -> rocket::Rocket<rocket::Build> {
 
     dotenv().ok();
 
-    let mut rocket = rocket::build().manage(db::init_pool());
+    let mut rocket = rocket::build().manage(db::init_pool())
+    .mount("/", routes![handle_cors]);
     rocket = user_routes::mount(rocket);
     rocket = class_routes::mount(rocket);
-    rocket = assignment_routes::mount(rocket);
+    // rocket = assignment_routes::mount(rocket);
     rocket = file_routes::mount(rocket);
     rocket = link_routes::mount(rocket);
     rocket = error_routes(rocket).attach(make_cors());

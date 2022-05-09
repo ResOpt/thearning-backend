@@ -22,8 +22,8 @@ use crate::traits::Embedable;
 use crate::submissions::models::{Submissions, FillableSubmissions};
 
 
-#[post("/")]
-fn draft(key: ApiKey, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
+#[post("/<class_id>/assignments")]
+pub fn draft(key: ApiKey, class_id: &str, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
     let default = Assignment::default();
 
     default.draft(&conn);
@@ -31,8 +31,8 @@ fn draft(key: ApiKey, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
     Ok(Json(json!({"assignment_id": default.assignment_id})))
 }
 
-#[patch("/", data = "<data>")]
-fn update_assignment(key: ApiKey, data: Json<AssignmentData>, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
+#[patch("/<class_id>/assignments", data = "<data>")]
+pub fn update_assignment(key: ApiKey, class_id: &str, data: Json<AssignmentData>, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
     let data = data.into_inner();
 
     let assignment = match Assignment::get_by_id(&data.id, &conn) {
@@ -45,8 +45,8 @@ fn update_assignment(key: ApiKey, data: Json<AssignmentData>, conn: db::DbConn) 
     Ok(Json(json!({"new_assignment": new})))
 }
 
-#[delete("/<assignment_id>")]
-fn delete_assignment(key: ApiKey, assignment_id: String, conn: db::DbConn) -> Result<Status, Status> {
+#[delete("/<class_id>/assignments/<assignment_id>")]
+pub fn delete_assignment(key: ApiKey, class_id: &str, assignment_id: String, conn: db::DbConn) -> Result<Status, Status> {
     let assignment = match Assignment::get_by_id(&assignment_id, &conn) {
         Ok(a) => a,
         Err(_) => return Err(Status::NotFound)
@@ -99,8 +99,8 @@ fn get_attachments(vec: Vec<Attachment>, conn: &PgConnection) -> Vec<AssignmentR
     res
 }
 
-#[get("/students/<assignment_id>")]
-fn students_assignment(key: ApiKey, assignment_id: &str, conn: DbConn) -> Result<Json<JsonValue>, Status> {
+#[get("/<class_id>/assignments/students/<assignment_id>")]
+pub fn students_assignment(key: ApiKey, class_id: &str, assignment_id: &str, conn: DbConn) -> Result<Json<JsonValue>, Status> {
 
     let user = match User::find_user(&key.0, &conn) {
         Ok(u) => u,
@@ -144,8 +144,8 @@ fn students_assignment(key: ApiKey, assignment_id: &str, conn: DbConn) -> Result
     Ok(Json(json!({"assignment_attachments": assignment_resp, "assignment": assignment, "submission": submission, "submission_attachments": submission_resp})))
 }
 
-#[get("/teachers/<assignment_id>")]
-fn teachers_assignment(key: ApiKey, assignment_id: &str, conn: DbConn) -> Result<Json<JsonValue>, Status> {
+#[get("/<class_id>/assignments/teachers/<assignment_id>")]
+pub fn teachers_assignment(key: ApiKey, class_id: &str, assignment_id: &str, conn: DbConn) -> Result<Json<JsonValue>, Status> {
 
     let user = match User::find_user(&key.0, &conn) {
         Ok(u) => u,
@@ -173,6 +173,6 @@ fn teachers_assignment(key: ApiKey, assignment_id: &str, conn: DbConn) -> Result
     Ok(Json(json!({"assignment_attachments": assignment_resp, "assignment": assignment, "submissions": submission})))
 }
 
-pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
-    rocket.mount("/api/assignments", routes![draft, update_assignment, delete_assignment, students_assignment, teachers_assignment])
-}
+// pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
+//     rocket.mount("/api/assignments", routes![draft, update_assignment, delete_assignment, students_assignment, teachers_assignment])
+// }
