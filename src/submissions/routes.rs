@@ -9,23 +9,28 @@ use rocket::serde::json::Json;
 use rocket::serde::json::serde_json::json;
 use rocket_dyn_templates::handlebars::JsonValue;
 
-use crate::auth::ApiKey;
+use crate::auth::{ApiKey, ClassGuard};
 use crate::submissions::models::{FillableSubmissions, Submissions};
 use crate::db;
 use crate::traits::Manipulable;
 use crate::users::models::User;
 
-#[post("/submit", data = "<data>")]
-fn submit_submission(key: ApiKey, data: String, conn: db::DbConn) -> Result<Status, Status> {
+#[post("/<class_id>/submissions/<submission_id>/submit")]
+pub fn submit_submission(key: ClassGuard, class_id: &str, submission_id: &str, conn: db::DbConn) -> Result<Status, Status> {
 
     let user = match User::find_user(&key.0, &conn) {
         Ok(user) => user,
         Err(_) => return Err(Status::NotFound)
     };
 
-    let submission = match Submissions::get_by_id(&data ,&user.user_id, &conn) {
+    let submission = match Submissions::find_submission(&submission_id.to_string(), &conn) {
         Ok(sub) => sub,
         Err(_) => return Err(Status::NotFound),
+    };
+
+    match Submissions::get_by_id(&submission.assignment_id, &user.user_id, &conn) {
+        Ok(_) => (),
+        Err(_) => return Err(Status::Unauthorized),
     };
 
     if submission.submitted {
@@ -38,17 +43,22 @@ fn submit_submission(key: ApiKey, data: String, conn: db::DbConn) -> Result<Stat
     }
 }
 
-#[post("/unsubmit", data = "<data>")]
-fn unsubmit_submission(key: ApiKey, data: String, conn: db::DbConn) -> Result<Status, Status> {
+#[post("/<class_id>/submissions/<submission_id>/unsubmit")]
+pub fn unsubmit_submission(key: ClassGuard, class_id: &str, submission_id: &str, conn: db::DbConn) -> Result<Status, Status> {
 
     let user = match User::find_user(&key.0, &conn) {
         Ok(user) => user,
         Err(_) => return Err(Status::NotFound),
     };
 
-    let submission = match Submissions::get_by_id(&data ,&user.user_id, &conn) {
+    let submission = match Submissions::find_submission(&submission_id.to_string(), &conn) {
         Ok(sub) => sub,
         Err(_) => return Err(Status::NotFound),
+    };
+
+    match Submissions::get_by_id(&submission.assignment_id, &user.user_id, &conn) {
+        Ok(_) => (),
+        Err(_) => return Err(Status::Unauthorized),
     };
 
     if !submission.submitted {
@@ -60,9 +70,4 @@ fn unsubmit_submission(key: ApiKey, data: String, conn: db::DbConn) -> Result<St
         Err(_) => Err(Status::InternalServerError),
     }
 
-}
-
-pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
-    rocket
-        .mount("/api/submissions", routes![submit_submission, unsubmit_submission])
 }

@@ -40,6 +40,10 @@ impl Submissions {
         Ok(submissions::table.filter(submissions::user_id.eq(user_id)).filter(submissions::assignment_id.eq(assignment_id)).get_result::<Self>(conn)?)
     }
 
+    pub fn find_submission(submission_id: &String, conn: &PgConnection) -> ThearningResult<Self> {
+        Ok(submissions::table.find(submission_id).get_result::<Self>(conn)?)
+    }
+
     pub fn get_by_assignment(assignment_id: &String, conn: &PgConnection) -> ThearningResult<Self> {
         Ok(submissions::table.filter(submissions::assignment_id.eq(assignment_id)).get_result::<Self>(conn)?)
     }
@@ -60,7 +64,7 @@ impl Submissions {
 
         let now_date = Local::today().naive_local();
 
-        let now_time = NaiveTime::parse_from_str(&now.to_string(), "%H:%M:%S").unwrap();
+        let now_time = now.time();
 
         let submitted = NaiveDateTime::new(now_date, now_time);
 

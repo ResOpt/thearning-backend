@@ -30,6 +30,7 @@ table! {
         instructions -> Nullable<Text>,
         total_marks -> Nullable<Int4>,
         created_at -> Timestamp,
+        creator -> Nullable<Varchar>,
         draft -> Bool,
     }
 }
@@ -164,6 +165,7 @@ joinable!(admins -> users (user_id));
 joinable!(announcements -> classes (class_id));
 joinable!(assignments -> classes (class_id));
 joinable!(assignments -> topics (topic_id));
+joinable!(assignments -> users (creator));
 joinable!(attachments -> announcements (announcement_id));
 joinable!(attachments -> assignments (assignment_id));
 joinable!(attachments -> files (file_id));

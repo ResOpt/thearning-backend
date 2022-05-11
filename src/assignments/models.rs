@@ -22,6 +22,7 @@ pub struct Assignment {
     pub instructions: Option<String>,
     pub total_marks: Option<i32>,
     pub created_at: NaiveDateTime,
+    pub creator: Option<String>,
     pub draft: bool,
 }
 
@@ -35,6 +36,7 @@ pub struct FillableAssignments {
     pub due_time: Option<NaiveTime>,
     pub instructions: Option<String>,
     pub total_marks: Option<i32>,
+    pub creator: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -76,6 +78,7 @@ impl Default for Assignment {
             posted_date: NaiveDate::from(chrono::offset::Local::now().date().naive_local()),
             instructions: None,
             total_marks: None,
+            creator: None,
             created_at: Local::now().naive_local(),
             draft: true,
         }
@@ -96,6 +99,7 @@ impl Manipulable<FillableAssignments> for Assignment {
                   assignments::class_id.eq(&update.class_id),
                   assignments::instructions.eq(&update.instructions),
                   assignments::total_marks.eq(&update.total_marks),
+                  assignments::creator.eq(&update.creator),
                   assignments::draft.eq(false)))
             .execute(conn)?;
 

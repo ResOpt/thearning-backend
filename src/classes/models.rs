@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 use crate::errors::ThearningResult;
 
 use crate::schema::{classes, topics};
-use crate::traits::Manipulable;
+use crate::traits::{Manipulable, ClassUser};
+use crate::users::models::{Student, Teacher, Admin};
 use crate::utils::generate_random_id;
 
 #[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Clone)]
@@ -62,6 +63,18 @@ pub struct NewTopic {
 impl Classroom {
     pub fn find(id: &String, conn: &PgConnection) -> ThearningResult<Self> {
         Ok(classes::table.find(id).get_result::<Self>(conn)?)
+    }
+
+    pub fn user_in_class(class_id: &String, uid: &String, conn: &PgConnection) -> bool {
+        let students = Student::load_in_class(class_id, conn).unwrap();
+        let teachers = Teacher::load_in_class(class_id, conn).unwrap();
+        let admins = Admin::load_in_class(class_id, conn).unwrap();
+        match (students.iter().find(|x| &x.user_id == uid), 
+               teachers.iter().find(|x| &x.user_id == uid),
+               admins.iter().find(|x| &x.user_id == uid)) {
+                   (None, None, None) => false,
+                   _ => true,
+               }
     }
 }
 

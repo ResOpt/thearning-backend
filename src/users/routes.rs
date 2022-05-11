@@ -1,7 +1,7 @@
 use std::{env, fs};
 use std::path::Path;
 use chrono::Local;
-use diesel::{EqAll, QueryDsl, RunQueryDsl};
+use diesel::{EqAll, QueryDsl, RunQueryDsl, PgConnection};
 use diesel::associations::HasTable;
 use dotenv::var;
 use jsonwebtoken::{Algorithm, Header};
@@ -237,6 +237,13 @@ pub fn get_all(pages: Option<i64>, conn: db::DbConn) -> Result<Json<JsonValue>, 
     };
 
     Ok(Json((json!({"users":user, "total_pages":total_pages}))))
+}
+
+pub fn get_user(uid: &String, conn: &PgConnection) -> Result<User, Status> {
+    match User::find_user(uid, conn) {
+        Ok(user) => Ok(user),
+        Err(_) => Err(Status::NotFound)
+    }
 }
 
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {

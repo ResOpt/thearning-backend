@@ -9,8 +9,10 @@ CREATE TABLE assignments(
     instructions TEXT,
     total_marks INT,
     created_at TIMESTAMP NOT NULL,
+    creator VARCHAR,
     draft BOOLEAN NOT NULL,
 
     FOREIGN KEY (class_id) REFERENCES classes(class_id) ON DELETE CASCADE ,
-    FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE
+    FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE,
+    FOREIGN KEY (creator) REFERENCES users(user_id) ON DELETE CASCADE
 )

@@ -27,6 +27,8 @@ use crate::users::models::{Admin, Role, Student, Teacher, User, ResponseUser};
 use crate::utils::{load_classuser, update};
 use crate::assignments::routes::*;
 use crate::submissions::models::{Submissions, FillableSubmissions};
+use crate::auth::ClassGuard;
+use crate::submissions::routes::*;
 
 #[post("/", data = "<new_class>", rank = 1)]
 async fn create_classroom<'a>(
@@ -203,7 +205,7 @@ fn classrooms(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, St
 }
 
 #[post("/topic", data = "<new_topic>")]
-fn topic(key: ApiKey, new_topic: Json<NewTopic>, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
+fn topic(key: ClassGuard, new_topic: Json<NewTopic>, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
     let topic = new_topic.into_inner();
 
     match User::get_role(&key.0, &*connection).unwrap() {
@@ -224,7 +226,7 @@ fn topic(key: ApiKey, new_topic: Json<NewTopic>, connection: db::DbConn) -> Resu
 }
 
 #[get("/<class_id>", rank = 1)]
-fn class(key: ApiKey, class_id: String, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
+fn class(key: ClassGuard, class_id: String, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
 
     let class = match Classroom::find(&class_id, &conn) {
         Ok(c) => c,
@@ -243,6 +245,6 @@ fn class(key: ApiKey, class_id: String, conn: db::DbConn) -> Result<Json<JsonVal
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     rocket.mount(
         "/api/classroom",
-        routes![create_classroom, join, classrooms, topic, class, draft, update_assignment, delete_assignment, students_assignment, teachers_assignment],
+        routes![create_classroom, join, classrooms, topic, class, draft, update_assignment, delete_assignment, students_assignment, teachers_assignment, submit_submission, unsubmit_submission],
     )
 }

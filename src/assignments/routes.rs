@@ -8,7 +8,7 @@ use rocket_dyn_templates::handlebars::JsonValue;
 
 use crate::assignments::models::{Assignment, FillableAssignments};
 use crate::attachments::models::Attachment;
-use crate::auth::ApiKey;
+use crate::auth::{ApiKey, ClassGuard};
 use crate::db;
 use crate::db::DbConn;
 use crate::files::models::UploadedFile;
@@ -16,14 +16,14 @@ use crate::links::models::Link;
 use crate::schema::attachments;
 use crate::traits::{Manipulable, ClassUser};
 use crate::users::models::{User, Student};
+use crate::users::routes::get_user;
 use crate::utils::{update, generate_random_id};
 use crate::assignments::models::AssignmentData;
 use crate::traits::Embedable;
 use crate::submissions::models::{Submissions, FillableSubmissions};
 
-
 #[post("/<class_id>/assignments")]
-pub fn draft(key: ApiKey, class_id: &str, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
+pub fn draft(key: ClassGuard, class_id: &str, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
     let default = Assignment::default();
 
     default.draft(&conn);
@@ -32,7 +32,7 @@ pub fn draft(key: ApiKey, class_id: &str, conn: db::DbConn) -> Result<Json<JsonV
 }
 
 #[patch("/<class_id>/assignments", data = "<data>")]
-pub async fn update_assignment(key: ApiKey, class_id: &str, data: Json<AssignmentData>, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
+pub async fn update_assignment(key: ClassGuard, class_id: &str, data: Json<AssignmentData>, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
     let data = data.into_inner();
 
     let assignment = match Assignment::get_by_id(&data.id, &conn) {
@@ -53,17 +53,34 @@ pub async fn update_assignment(key: ApiKey, class_id: &str, data: Json<Assignmen
         }
     };
 
-    let new = update(assignment, data.assignment, &conn).unwrap();
+    let mut assignment_data = data.assignment;
+
+    assignment_data.creator = Some(get_user(&key.0, &conn).unwrap().user_id);
+
+    let new = update(assignment, assignment_data, &conn).unwrap();
 
     Ok(Json(json!({"new_assignment": new})))
 }
 
 #[delete("/<class_id>/assignments/<assignment_id>")]
-pub fn delete_assignment(key: ApiKey, class_id: &str, assignment_id: String, conn: db::DbConn) -> Result<Status, Status> {
+pub fn delete_assignment(key: ClassGuard, class_id: &str, assignment_id: String, conn: db::DbConn) -> Result<Status, Status> {
+
+    let user = get_user(&key.0, &conn).unwrap();
+
     let assignment = match Assignment::get_by_id(&assignment_id, &conn) {
         Ok(a) => a,
         Err(_) => return Err(Status::NotFound)
     };
+
+    if !user.is_admin() || !user.is_teacher() {
+        return Err(Status::Forbidden)
+    }
+
+    if assignment.draft == false {
+        if user.is_teacher() && assignment.creator.as_ref().unwrap() == &user.user_id {
+            return Err(Status::Forbidden)
+        }
+    }
 
     assignment.delete(&conn).unwrap();
 
@@ -113,7 +130,7 @@ fn get_attachments(vec: Vec<Attachment>, conn: &PgConnection) -> Vec<AssignmentR
 }
 
 #[get("/<class_id>/assignments/students/<assignment_id>")]
-pub fn students_assignment(key: ApiKey, class_id: &str, assignment_id: &str, conn: DbConn) -> Result<Json<JsonValue>, Status> {
+pub fn students_assignment(key: ClassGuard, class_id: &str, assignment_id: &str, conn: DbConn) -> Result<Json<JsonValue>, Status> {
 
     let user = match User::find_user(&key.0, &conn) {
         Ok(u) => u,
@@ -143,7 +160,7 @@ pub fn students_assignment(key: ApiKey, class_id: &str, assignment_id: &str, con
 }
 
 #[get("/<class_id>/assignments/teachers/<assignment_id>")]
-pub fn teachers_assignment(key: ApiKey, class_id: &str, assignment_id: &str, conn: DbConn) -> Result<Json<JsonValue>, Status> {
+pub fn teachers_assignment(key: ClassGuard, class_id: &str, assignment_id: &str, conn: DbConn) -> Result<Json<JsonValue>, Status> {
 
     let user = match User::find_user(&key.0, &conn) {
         Ok(u) => u,
