@@ -17,7 +17,7 @@ use crate::traits::Manipulable;
 use crate::users::models::User;
 
 #[post("/<class_id>/comments", data = "<data>")]
-fn post_comment(
+pub fn post_comment(
     key: ClassGuard,
     class_id: &str,
     data: Json<FillableComment>,
@@ -41,7 +41,7 @@ fn post_comment(
 }
 
 #[post("/<class_id>/privatecomments", data = "<data>")]
-fn post_private_comment(
+pub fn post_private_comment(
     key: ClassGuard,
     class_id: &str,
     data: Json<FillablePrivateComment>,
@@ -65,7 +65,7 @@ fn post_private_comment(
 }
 
 #[delete("/<class_id>/comments", data = "<data>")]
-fn delete_comment(
+pub fn delete_comment(
     key: ClassGuard,
     class_id: &str,
     data: String,
@@ -86,7 +86,7 @@ fn delete_comment(
 }
 
 #[delete("/<class_id>/privatecomments", data = "<data>")]
-fn delete_private_comment(
+pub fn delete_private_comment(
     key: ClassGuard,
     class_id: &str,
     data: String,

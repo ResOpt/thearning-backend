@@ -29,6 +29,7 @@ use crate::submissions::routes::*;
 use crate::traits::{ClassUser, Manipulable};
 use crate::users::models::{Admin, ResponseUser, Role, Student, Teacher, User};
 use crate::utils::{load_classuser, update};
+use crate::comments::routes::*;
 
 #[post("/", data = "<new_class>", rank = 1)]
 async fn create_classroom<'a>(
@@ -267,7 +268,11 @@ pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Bu
             students_assignment,
             teachers_assignment,
             submit_submission,
-            unsubmit_submission
+            unsubmit_submission,
+            post_comment,
+            post_private_comment,
+            delete_comment,
+            delete_private_comment
         ],
     )
 }
