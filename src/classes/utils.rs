@@ -2,8 +2,8 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use diesel::query_dsl::QueryDsl;
 use diesel::result::Error;
-use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
 
 use crate::schema::classes;
 

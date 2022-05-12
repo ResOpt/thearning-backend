@@ -1,13 +1,13 @@
 use std::fmt;
 
-use bcrypt::{DEFAULT_COST, hash, verify};
+use crate::errors::{ErrorKind, ThearningResult};
+use bcrypt::{hash, verify, DEFAULT_COST};
 use chrono::{Local, NaiveDate, NaiveDateTime};
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use rocket::fs::TempFile;
 use serde::{Deserialize, Serialize};
-use crate::errors::{ErrorKind, ThearningResult};
 
 use crate::schema::admins;
 use crate::schema::students;
@@ -91,7 +91,7 @@ pub struct PasswordChange<'a> {
 }
 
 #[derive(
-Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable, Debug,
+    Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable, Debug,
 )]
 #[belongs_to(User)]
 #[table_name = "students"]
@@ -103,7 +103,7 @@ pub struct Student {
 }
 
 #[derive(
-Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable,
+    Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable,
 )]
 #[belongs_to(User)]
 #[table_name = "teachers"]
@@ -115,7 +115,7 @@ pub struct Teacher {
 }
 
 #[derive(
-Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable,
+    Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable,
 )]
 #[belongs_to(User)]
 #[table_name = "admins"]
@@ -178,7 +178,8 @@ impl User {
                 if matching {
                     diesel::update(users::table.filter(users::user_id.eq(&self.user_id)))
                         .set(users::password.eq(&new_hashed))
-                        .execute(conn).unwrap();
+                        .execute(conn)
+                        .unwrap();
                     Ok(())
                 } else {
                     Err(())
@@ -217,7 +218,7 @@ pub struct ResponseUser {
 }
 
 impl FromIterator<User> for Vec<ResponseUser> {
-    fn from_iter<I: IntoIterator<Item=User>>(iter: I) -> Self {
+    fn from_iter<I: IntoIterator<Item = User>>(iter: I) -> Self {
         let mut c = Self::new();
 
         for i in iter {
@@ -238,7 +239,6 @@ impl FromIterator<User> for Vec<ResponseUser> {
     }
 }
 
-
 impl Manipulable<Self> for User {
     fn create(new_data: Self, conn: &PgConnection) -> ThearningResult<Self> {
         let hashed = Self {
@@ -249,38 +249,38 @@ impl Manipulable<Self> for User {
             .values(&hashed)
             .execute(conn)?;
 
-        let res = users::table
-            .find(hashed.user_id)
-            .get_result::<Self>(conn)?;
+        let res = users::table.find(hashed.user_id).get_result::<Self>(conn)?;
 
         Ok(res)
     }
 
     fn update(&self, update: Self, conn: &PgConnection) -> ThearningResult<Self> {
         diesel::update(users::table.filter(users::user_id.eq(&self.user_id)))
-            .set((users::fullname.eq(&update.fullname),
-                  users::profile_photo.eq(&update.profile_photo),
-                  users::email.eq(&update.email),
-                  users::bio.eq(&update.bio),
-                  users::birth_place.eq(&update.birth_place),
-                  users::birth_date.eq(&update.birth_date))).execute(conn)?;
+            .set((
+                users::fullname.eq(&update.fullname),
+                users::profile_photo.eq(&update.profile_photo),
+                users::email.eq(&update.email),
+                users::bio.eq(&update.bio),
+                users::birth_place.eq(&update.birth_place),
+                users::birth_date.eq(&update.birth_date),
+            ))
+            .execute(conn)?;
 
-        let res = users::dsl::users.find(&self.user_id)
+        let res = users::dsl::users
+            .find(&self.user_id)
             .get_result::<Self>(conn)?;
 
         Ok(res)
     }
 
     fn delete(&self, conn: &PgConnection) -> ThearningResult<Self> {
-        let res = diesel::delete(users::table.find(&self.user_id))
-            .get_result::<Self>(conn)?;
+        let res = diesel::delete(users::table.find(&self.user_id)).get_result::<Self>(conn)?;
 
         Ok(res)
     }
 
     fn get_all(conn: &PgConnection) -> ThearningResult<Vec<Self>> {
-        let res = users::table
-            .load::<Self>(conn)?;
+        let res = users::table.load::<Self>(conn)?;
 
         Ok(res)
     }
@@ -300,9 +300,7 @@ macro_rules! impl_classuser {
                     class_id: class_id.to_string(),
                     created_at: Local::now().naive_local(),
                 };
-                diesel::insert_into($d::table)
-                    .values(&u)
-                    .execute(conn)?;
+                diesel::insert_into($d::table).values(&u).execute(conn)?;
 
                 let res = $d::table
                     .filter($d::user_id.eq(u.user_id))
@@ -314,7 +312,9 @@ macro_rules! impl_classuser {
             fn load_in_class(class_id: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>> {
                 Ok($d::table
                     .filter($d::class_id.eq(&class_id))
-                    .load::<Self>(conn)?.into_iter().collect::<Vec<Self>>())
+                    .load::<Self>(conn)?
+                    .into_iter()
+                    .collect::<Vec<Self>>())
             }
 
             fn find(uid: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>> {

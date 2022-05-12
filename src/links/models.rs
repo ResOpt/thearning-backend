@@ -1,10 +1,10 @@
-use chrono::NaiveDateTime;
-use diesel::{PgConnection, QueryDsl};
-use diesel::prelude::*;
-use serde::{Serialize, Deserialize};
 use crate::errors::ThearningResult;
-use crate::traits::{Manipulable, Embedable};
 use crate::schema::links;
+use crate::traits::{Embedable, Manipulable};
+use chrono::NaiveDateTime;
+use diesel::prelude::*;
+use diesel::{PgConnection, QueryDsl};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Clone)]
 #[table_name = "links"]

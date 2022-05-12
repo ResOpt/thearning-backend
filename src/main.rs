@@ -8,21 +8,21 @@ extern crate diesel;
 extern crate rocket;
 extern crate rocket_cors;
 
-use std::env;
 use diesel::{Connection, PgConnection};
+use std::env;
 
 use dotenv::dotenv;
 use rocket::http::{Method, Status};
 use rocket_cors::{AllowedHeaders, AllowedOrigins, Cors, CorsOptions};
 
-use assignments::routes as assignment_routes;
-use errors::mount as error_routes;
-use classes::routes as class_routes;
-use files::routes as file_routes;
-use users::routes as user_routes;
-use links::routes as link_routes;
-use attachments::routes as att_routes;
 use crate::db::database_url;
+use assignments::routes as assignment_routes;
+use attachments::routes as att_routes;
+use classes::routes as class_routes;
+use errors::mount as error_routes;
+use files::routes as file_routes;
+use links::routes as link_routes;
+use users::routes as user_routes;
 
 mod classes;
 mod users;
@@ -30,17 +30,17 @@ mod users;
 mod assignments;
 mod attachments;
 pub mod auth;
+mod comments;
 pub mod db;
+mod errors;
 mod files;
+mod links;
+mod pagination;
 pub mod schema;
 mod submissions;
 mod tests;
-mod utils;
-mod errors;
 mod traits;
-mod pagination;
-mod links;
-mod comments;
+mod utils;
 
 const MEDIA_URL: &str = "media";
 
@@ -60,16 +60,22 @@ fn make_cors() -> Cors {
 
     CorsOptions {
         allowed_origins,
-        allowed_methods: vec![Method::Get, Method::Post, Method::Options, Method::Delete, Method::Patch]
-            .into_iter()
-            .map(From::from)
-            .collect(),
+        allowed_methods: vec![
+            Method::Get,
+            Method::Post,
+            Method::Options,
+            Method::Delete,
+            Method::Patch,
+        ]
+        .into_iter()
+        .map(From::from)
+        .collect(),
         allowed_headers: AllowedHeaders::all(),
         allow_credentials: true,
         ..Default::default()
     }
-        .to_cors()
-        .expect("error while building CORS")
+    .to_cors()
+    .expect("error while building CORS")
 }
 
 #[options("/<_..>")]
@@ -79,11 +85,11 @@ fn handle_cors() -> Status {
 
 #[launch]
 fn rocket() -> rocket::Rocket<rocket::Build> {
-
     dotenv().ok();
 
-    let mut rocket = rocket::build().manage(db::init_pool())
-    .mount("/", routes![handle_cors]);
+    let mut rocket = rocket::build()
+        .manage(db::init_pool())
+        .mount("/", routes![handle_cors]);
     rocket = user_routes::mount(rocket);
     rocket = class_routes::mount(rocket);
     // rocket = assignment_routes::mount(rocket);

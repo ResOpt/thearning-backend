@@ -1,9 +1,9 @@
+use crate::errors::ThearningResult;
 use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime};
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::errors::ThearningResult;
 
 use crate::schema::{comments, private_comments};
 use crate::traits::Manipulable;
@@ -50,8 +50,13 @@ impl Comment {
         Ok(comments::table.find(id).get_result::<Self>(conn)?)
     }
 
-    pub fn load_by_assignment(assignment_id: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>> {
-        Ok(comments::table.filter(comments::assignment_id.eq(assignment_id)).load::<Comment>(conn)?)
+    pub fn load_by_assignment(
+        assignment_id: &String,
+        conn: &PgConnection,
+    ) -> ThearningResult<Vec<Self>> {
+        Ok(comments::table
+            .filter(comments::assignment_id.eq(assignment_id))
+            .load::<Comment>(conn)?)
     }
 }
 
@@ -60,14 +65,18 @@ impl PrivateComment {
         Ok(private_comments::table.find(id).get_result::<Self>(conn)?)
     }
 
-    pub fn load_by_submission(submission_id: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>> {
-        Ok(private_comments::table.filter(private_comments::submission_id.eq(submission_id)).load::<PrivateComment>(conn)?)
+    pub fn load_by_submission(
+        submission_id: &String,
+        conn: &PgConnection,
+    ) -> ThearningResult<Vec<Self>> {
+        Ok(private_comments::table
+            .filter(private_comments::submission_id.eq(submission_id))
+            .load::<PrivateComment>(conn)?)
     }
 }
 
 impl Manipulable<FillableComment> for Comment {
     fn create(new_data: FillableComment, conn: &PgConnection) -> ThearningResult<Self> {
-
         let new_comment = Comment {
             id: format!("{}{}", generate_random_id(), generate_random_id()),
             user_id: new_data.user_id.unwrap(),
@@ -78,8 +87,8 @@ impl Manipulable<FillableComment> for Comment {
         };
 
         diesel::insert_into(comments::table)
-        .values(&new_comment)
-        .execute(conn)?;
+            .values(&new_comment)
+            .execute(conn)?;
 
         let res = comments::table
             .find(new_comment.id)
@@ -93,9 +102,8 @@ impl Manipulable<FillableComment> for Comment {
     }
 
     fn delete(&self, conn: &PgConnection) -> ThearningResult<Self> {
-        Ok(diesel::delete(comments::table.find(&self.id))
-            .get_result::<Self>(conn)?)   
-        }
+        Ok(diesel::delete(comments::table.find(&self.id)).get_result::<Self>(conn)?)
+    }
 
     fn get_all(conn: &PgConnection) -> ThearningResult<Vec<Self>> {
         todo!()
@@ -104,7 +112,6 @@ impl Manipulable<FillableComment> for Comment {
 
 impl Manipulable<FillablePrivateComment> for PrivateComment {
     fn create(new_data: FillablePrivateComment, conn: &PgConnection) -> ThearningResult<Self> {
-
         let new_comment = Self {
             id: format!("{}{}", generate_random_id(), generate_random_id()),
             user_id: new_data.user_id.unwrap(),
@@ -114,8 +121,8 @@ impl Manipulable<FillablePrivateComment> for PrivateComment {
         };
 
         diesel::insert_into(private_comments::table)
-        .values(&new_comment)
-        .execute(conn)?;
+            .values(&new_comment)
+            .execute(conn)?;
 
         let res = private_comments::table
             .find(new_comment.id)
@@ -129,8 +136,7 @@ impl Manipulable<FillablePrivateComment> for PrivateComment {
     }
 
     fn delete(&self, conn: &PgConnection) -> ThearningResult<Self> {
-        Ok(diesel::delete(private_comments::table.find(&self.id))
-            .get_result::<Self>(conn)?)   
+        Ok(diesel::delete(private_comments::table.find(&self.id)).get_result::<Self>(conn)?)
     }
 
     fn get_all(conn: &PgConnection) -> ThearningResult<Vec<Self>> {

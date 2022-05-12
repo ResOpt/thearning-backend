@@ -1,12 +1,12 @@
-use chrono::{NaiveDate, NaiveDateTime, NaiveTime, Local};
-use serde::{Deserialize, Serialize};
-use diesel::{PgConnection, QueryDsl, RunQueryDsl};
+use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime};
 use diesel::prelude::*;
+use diesel::{PgConnection, QueryDsl, RunQueryDsl};
+use serde::{Deserialize, Serialize};
 
 use crate::assignments::models::Assignment;
+use crate::errors::ThearningResult;
 use crate::schema::submissions;
 use crate::traits::Manipulable;
-use crate::errors::ThearningResult;
 use crate::utils::generate_random_id;
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, Associations)]
@@ -36,25 +36,39 @@ pub struct FillableSubmissions {
 }
 
 impl Submissions {
-    pub fn get_by_id(assignment_id: &String, user_id: &String, conn: &PgConnection) -> ThearningResult<Self> {
-        Ok(submissions::table.filter(submissions::user_id.eq(user_id)).filter(submissions::assignment_id.eq(assignment_id)).get_result::<Self>(conn)?)
+    pub fn get_by_id(
+        assignment_id: &String,
+        user_id: &String,
+        conn: &PgConnection,
+    ) -> ThearningResult<Self> {
+        Ok(submissions::table
+            .filter(submissions::user_id.eq(user_id))
+            .filter(submissions::assignment_id.eq(assignment_id))
+            .get_result::<Self>(conn)?)
     }
 
     pub fn find_submission(submission_id: &String, conn: &PgConnection) -> ThearningResult<Self> {
-        Ok(submissions::table.find(submission_id).get_result::<Self>(conn)?)
+        Ok(submissions::table
+            .find(submission_id)
+            .get_result::<Self>(conn)?)
     }
 
     pub fn get_by_assignment(assignment_id: &String, conn: &PgConnection) -> ThearningResult<Self> {
-        Ok(submissions::table.filter(submissions::assignment_id.eq(assignment_id)).get_result::<Self>(conn)?)
+        Ok(submissions::table
+            .filter(submissions::assignment_id.eq(assignment_id))
+            .get_result::<Self>(conn)?)
     }
-    
-    pub fn unsubmit(&self, conn: &PgConnection) -> ThearningResult<Self> {
-        diesel::update(submissions::table.filter(submissions::submission_id.eq(&self.submission_id)))
-            .set(submissions::submitted.eq(false))
-            .execute(conn)?;
 
-        Ok(submissions::dsl::submissions.find(&self.submission_id)
-        .get_result::<Self>(conn)?)
+    pub fn unsubmit(&self, conn: &PgConnection) -> ThearningResult<Self> {
+        diesel::update(
+            submissions::table.filter(submissions::submission_id.eq(&self.submission_id)),
+        )
+        .set(submissions::submitted.eq(false))
+        .execute(conn)?;
+
+        Ok(submissions::dsl::submissions
+            .find(&self.submission_id)
+            .get_result::<Self>(conn)?)
     }
 
     pub fn submit(&self, conn: &PgConnection) -> ThearningResult<Self> {
@@ -76,33 +90,41 @@ impl Submissions {
         };
 
         let on_time = match due {
-            Some(d) => if submitted < d {
-                Some(true)
-            } else { Some(false) }
+            Some(d) => {
+                if submitted < d {
+                    Some(true)
+                } else {
+                    Some(false)
+                }
+            }
             None => None,
         };
 
-        diesel::update(submissions::table.filter(submissions::submission_id.eq(&self.submission_id)))
-        .set((submissions::submitted.eq(true),
-              submissions::submitted_date.eq(&now_date),
-              submissions::submitted_time.eq(&now_time),
-              submissions::on_time.eq(on_time)))
+        diesel::update(
+            submissions::table.filter(submissions::submission_id.eq(&self.submission_id)),
+        )
+        .set((
+            submissions::submitted.eq(!self.submitted),
+            submissions::submitted_date.eq(&now_date),
+            submissions::submitted_time.eq(&now_time),
+            submissions::on_time.eq(on_time),
+        ))
         .execute(conn)?;
 
-        Ok(submissions::dsl::submissions.find(&self.submission_id)
-        .get_result::<Self>(conn)?)
+        Ok(submissions::dsl::submissions
+            .find(&self.submission_id)
+            .get_result::<Self>(conn)?)
     }
 }
 
 impl Manipulable<FillableSubmissions> for Submissions {
     fn create(new_data: FillableSubmissions, conn: &PgConnection) -> ThearningResult<Self> {
-
         let submission = Submissions {
             submission_id: format!("{}{}", generate_random_id(), generate_random_id()),
             assignment_id: new_data.assignment_id,
             user_id: new_data.user_id,
-            submitted_date: None,
-            submitted_time: None,
+            submitted_date: Some(Local::today().naive_local()),
+            submitted_time: Some(Local::now().naive_local().time()),
             on_time: None,
             marks_allotted: None,
             submitted: false,
@@ -132,4 +154,3 @@ impl Manipulable<FillableSubmissions> for Submissions {
         todo!()
     }
 }
-

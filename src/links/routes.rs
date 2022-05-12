@@ -1,20 +1,20 @@
+use chrono::Local;
 use rocket::fs::TempFile;
 use rocket::http::Status;
-use scrape_scrape::data::{YoutubeData, Scrapable, WikipediaData, OtherData};
-use scrape_scrape::{UrlData, get_raw_data, Url};
-use serde::{Serialize, Deserialize};
-use rocket::serde::json::Json;
 use rocket::serde::json::serde_json::json;
+use rocket::serde::json::Json;
 use rocket_dyn_templates::handlebars::JsonValue;
-use chrono::Local;
+use scrape_scrape::data::{OtherData, Scrapable, WikipediaData, YoutubeData};
+use scrape_scrape::{get_raw_data, Url, UrlData};
+use serde::{Deserialize, Serialize};
 
-use crate::attachments::models::{FillableAttachment, Attachment};
+use crate::attachments::models::{Attachment, FillableAttachment};
 use crate::auth::ApiKey;
 use crate::db;
-use crate::users::models::User;
 use crate::links::models::Link;
-use crate::utils::generate_random_id;
 use crate::traits::Manipulable;
+use crate::users::models::User;
+use crate::utils::generate_random_id;
 
 #[derive(Deserialize, Serialize)]
 struct AttachmentData<'a> {
@@ -25,8 +25,11 @@ struct AttachmentData<'a> {
 }
 
 #[post("/", data = "<data>")]
-async fn handle_link<'a>(key: ApiKey, data: Json<AttachmentData<'a>>, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
-
+async fn handle_link<'a>(
+    key: ApiKey,
+    data: Json<AttachmentData<'a>>,
+    conn: db::DbConn,
+) -> Result<Json<JsonValue>, Status> {
     let data = data.into_inner();
 
     let user = match User::find_user(&key.0, &conn) {
@@ -39,25 +42,10 @@ async fn handle_link<'a>(key: ApiKey, data: Json<AttachmentData<'a>>, conn: db::
     let raw_data = get_raw_data(&data.url).await.unwrap();
 
     let url_data = match Url::from(data.url) {
-        Url::Youtube => {
-            UrlData::from(YoutubeData {
-                raw_data
-            })
-        }
-        Url::Wikipedia => {
-            UrlData::from(
-            WikipediaData {
-                raw_data
-            })
-        }
-        Url::Other => {
-            UrlData::from(
-            OtherData {
-                raw_data
-            })
-        }
+        Url::Youtube => UrlData::from(YoutubeData { raw_data }),
+        Url::Wikipedia => UrlData::from(WikipediaData { raw_data }),
+        Url::Other => UrlData::from(OtherData { raw_data }),
     };
-    
 
     let link = Link {
         id: link_id,
@@ -72,7 +60,7 @@ async fn handle_link<'a>(key: ApiKey, data: Json<AttachmentData<'a>>, conn: db::
 
     let create_link = match Link::create(cloned_link, &conn) {
         Ok(l) => l,
-        Err(_) => return Err(Status::BadRequest)
+        Err(_) => return Err(Status::BadRequest),
     };
 
     let new_attachment = FillableAttachment {
@@ -86,14 +74,12 @@ async fn handle_link<'a>(key: ApiKey, data: Json<AttachmentData<'a>>, conn: db::
 
     let attachment = match Attachment::create(new_attachment, &conn) {
         Ok(v) => v,
-        Err(_) => return Err(Status::UnprocessableEntity)
+        Err(_) => return Err(Status::UnprocessableEntity),
     };
-    
-    Ok(Json(json!({"link":create_link, "attachment": attachment})))
 
+    Ok(Json(json!({"link":create_link, "attachment": attachment})))
 }
 
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
-    rocket
-        .mount("/api/links", routes![handle_link])
+    rocket.mount("/api/links", routes![handle_link])
 }

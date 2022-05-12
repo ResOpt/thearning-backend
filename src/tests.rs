@@ -22,9 +22,9 @@ mod tests {
     use crate::schema::teachers::dsl::teachers as teachers_object;
     use crate::schema::users;
     use crate::schema::users::dsl::users as users_object;
+    use crate::submissions::models::Submissions;
     use crate::traits::ClassUser;
     use crate::users::models::Student;
-    use crate::submissions::models::Submissions;
 
     use self::diesel::prelude::*;
 
@@ -205,7 +205,9 @@ mod tests {
 
         let read = read_token(&r.0.token).unwrap();
 
-        let string = format!("class_name=Test Class&class_description=Just a Test Class&section=Testing Class");
+        let string = format!(
+            "class_name=Test Class&class_description=Just a Test Class&section=Testing Class"
+        );
 
         let client = client();
 
@@ -226,7 +228,6 @@ mod tests {
         // Is it success?
         assert_eq!(!r.class_id.is_empty(), true);
     }
-
 
     #[test]
     fn t_5_create_assignment() {
@@ -253,7 +254,10 @@ mod tests {
 
         // Sending post request to create a new assignment
         let response_2 = client
-            .post(format!("/api/classroom/{}/assignments", &sample_class.class_id))
+            .post(format!(
+                "/api/classroom/{}/assignments",
+                &sample_class.class_id
+            ))
             .header(ContentType::JSON)
             .header(Header::new(
                 "Authorization",
@@ -282,7 +286,10 @@ mod tests {
         );
 
         let response_3 = client
-            .patch(format!("/api/classroom/{}/assignments", &sample_class.class_id))
+            .patch(format!(
+                "/api/classroom/{}/assignments",
+                &sample_class.class_id
+            ))
             .header(ContentType::JSON)
             .header(Header::new(
                 "Authorization",
@@ -295,12 +302,14 @@ mod tests {
         let r_3 = response_3.into_json::<NewAssignment>().unwrap();
 
         // Was the operation successful?
-        assert_eq!(r_3.new_assignment.assignment_name, "Dummy Assignment".to_string());
+        assert_eq!(
+            r_3.new_assignment.assignment_name,
+            "Dummy Assignment".to_string()
+        );
     }
 
     #[test]
     fn t_6_join_classroom() {
-
         let client = client();
 
         let teacher_token = auth_request().1.token;
@@ -327,12 +336,12 @@ mod tests {
         let class_id = &sample_class.class_id;
 
         let response_2 = client
-        .post(format!("/api/classroom/{}", class_id))
-        .header(Header::new(
-            "Authorization",
-            format!("Bearer {}", token.clone()),
-        ))
-        .dispatch();
+            .post(format!("/api/classroom/{}", class_id))
+            .header(Header::new(
+                "Authorization",
+                format!("Bearer {}", token.clone()),
+            ))
+            .dispatch();
 
         // Is the student creation success?
         assert_eq!(response_2.status(), Status::Ok);
@@ -340,7 +349,6 @@ mod tests {
 
     #[test]
     fn t_7_get_student_assignments() {
-
         let db_conn = PgConnection::establish(&database_url()).unwrap();
 
         let client = client();
@@ -350,10 +358,7 @@ mod tests {
         // Sending get request to get classrooms the user attends
         let response_1 = client
             .get("/api/classroom")
-            .header(Header::new(
-                "Authorization",
-                format!("Bearer {}", &token),
-            ))
+            .header(Header::new("Authorization", format!("Bearer {}", &token)))
             .dispatch();
 
         // Deserialize it into a struct
@@ -368,10 +373,7 @@ mod tests {
         let response_2 = client
             .get(format!("/api/classroom/{}", &sample_class.class_id))
             .header(ContentType::JSON)
-            .header(Header::new(
-                "Authorization",
-                format!("Bearer {}", &token),
-            ))
+            .header(Header::new("Authorization", format!("Bearer {}", &token)))
             .dispatch();
 
         // Deserializing the response
@@ -379,15 +381,16 @@ mod tests {
 
         let assignment = r_2.assignments.first().unwrap();
 
-        let submission = Submissions::get_by_assignment(&assignment.assignment_id, &db_conn).unwrap();
+        let submission =
+            Submissions::get_by_assignment(&assignment.assignment_id, &db_conn).unwrap();
 
         // Sending get request to get classrooms the user attends
         let response_3 = client
-            .get(format!("/api/classroom/{}/assignments/students/{}", &sample_class.class_id, &assignment.assignment_id))
-            .header(Header::new(
-                "Authorization",
-                format!("Bearer {}", &token),
+            .get(format!(
+                "/api/classroom/{}/assignments/students/{}",
+                &sample_class.class_id, &assignment.assignment_id
             ))
+            .header(Header::new("Authorization", format!("Bearer {}", &token)))
             .dispatch();
 
         let r_3 = response_3.into_json::<AssignmentData>().unwrap();

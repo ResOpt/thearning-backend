@@ -1,18 +1,18 @@
 use std::fs;
 
-use std::ops::Deref;
 use chrono::{Local, NaiveDateTime};
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::ops::Deref;
 
 use crate::assignments::models::Assignment;
 use crate::errors::ThearningResult;
 use crate::files::models::UploadedFile;
 use crate::schema::assignments;
-use crate::schema::{attachments, files, links};
 use crate::schema::attachments::attachment_id;
+use crate::schema::{attachments, files, links};
 use crate::users::models::User;
 use crate::utils::generate_random_id;
 
@@ -43,10 +43,7 @@ pub struct FillableAttachment<'a> {
 }
 
 impl Attachment {
-    pub fn create(
-        new_data: FillableAttachment,
-        conn: &PgConnection,
-    ) -> QueryResult<Self> {
+    pub fn create(new_data: FillableAttachment, conn: &PgConnection) -> QueryResult<Self> {
         let new_attachment = Self {
             attachment_id: generate_random_id().to_string(),
             file_id: new_data.file_id,
@@ -80,30 +77,34 @@ impl Attachment {
         Ok(attachments::table.find(id).get_result::<Self>(conn)?)
     }
 
-    pub fn load_by_assignment_id(assignment_id: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>> {
-        Ok(attachments::table.filter(attachments::assignment_id.eq(assignment_id)).load::<Self>(conn)?)
+    pub fn load_by_assignment_id(
+        assignment_id: &String,
+        conn: &PgConnection,
+    ) -> ThearningResult<Vec<Self>> {
+        Ok(attachments::table
+            .filter(attachments::assignment_id.eq(assignment_id))
+            .load::<Self>(conn)?)
     }
 
     pub fn delete(&self, conn: &PgConnection) -> ThearningResult<Self> {
         match &self.file_id {
-          Some(id) => {
-            let file = UploadedFile::receive(id, conn)?;
-            fs::remove_file(file.file_path)?;
-            diesel::delete(files::table.filter(files::file_id.eq(id))).execute(conn);
-        }  
-          None => {
-              ()
-          }
+            Some(id) => {
+                let file = UploadedFile::receive(id, conn)?;
+                fs::remove_file(file.file_path)?;
+                diesel::delete(files::table.filter(files::file_id.eq(id))).execute(conn);
+            }
+            None => (),
         }
         match &self.link_id {
             Some(id) => {
                 diesel::delete(links::table.filter(links::id.eq(id.trim()))).execute(conn);
             }
-            None => {
-                ()
-            }
-        }       
-        
-        Ok(diesel::delete(attachments::table.filter(attachment_id.eq(&self.attachment_id))).get_result(conn)?)
+            None => (),
+        }
+
+        Ok(
+            diesel::delete(attachments::table.filter(attachment_id.eq(&self.attachment_id)))
+                .get_result(conn)?,
+        )
     }
 }

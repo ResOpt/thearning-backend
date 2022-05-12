@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use std::fmt;
 
-use crate::{schema::files, traits::Embedable, errors::ErrorKind};
+use crate::{errors::ErrorKind, schema::files, traits::Embedable};
 
 pub enum FileType {
     MP4,
@@ -38,9 +38,13 @@ impl FileType {
             "text/plain" => Ok(Self::Text),
             "application/vnd.rar" => Ok(Self::RAR),
             "application/zip" => Ok(Self::ZIP),
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => Ok(Self::WordDocument),
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => Ok(Self::ExcelDocument),
-            _ => Err(ErrorKind::InvalidValue)
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => {
+                Ok(Self::WordDocument)
+            }
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => {
+                Ok(Self::ExcelDocument)
+            }
+            _ => Err(ErrorKind::InvalidValue),
         }
     }
 
@@ -90,7 +94,14 @@ pub struct UploadedFile {
 }
 
 impl UploadedFile {
-    pub fn new(file_id: &String, filename: &String, file_path: &String, file_url: &String, filetype: &String, conn: &PgConnection) -> QueryResult<Self> {
+    pub fn new(
+        file_id: &String,
+        filename: &String,
+        file_path: &String,
+        file_url: &String,
+        filetype: &String,
+        conn: &PgConnection,
+    ) -> QueryResult<Self> {
         let new_file = Self {
             file_id: file_id.to_string(),
             filename: filename.to_string(),
@@ -112,7 +123,9 @@ impl UploadedFile {
     }
 
     pub fn get_from_url(url: &String, conn: &PgConnection) -> QueryResult<Self> {
-        files::table.filter(files::file_url.eq(url)).get_result::<Self>(conn)
+        files::table
+            .filter(files::file_url.eq(url))
+            .get_result::<Self>(conn)
     }
 }
 

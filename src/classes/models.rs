@@ -1,14 +1,14 @@
+use crate::errors::ThearningResult;
 use chrono::{Local, NaiveDateTime};
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use rocket::fs::TempFile;
 use serde::{Deserialize, Serialize};
-use crate::errors::ThearningResult;
 
 use crate::schema::{classes, topics};
-use crate::traits::{Manipulable, ClassUser};
-use crate::users::models::{Student, Teacher, Admin};
+use crate::traits::{ClassUser, Manipulable};
+use crate::users::models::{Admin, Student, Teacher};
 use crate::utils::generate_random_id;
 
 #[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Clone)]
@@ -43,7 +43,7 @@ pub struct UpdatableClassroom<'a> {
 }
 
 #[derive(
-Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable, Debug,
+    Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable, Debug,
 )]
 #[belongs_to(Classroom)]
 #[table_name = "topics"]
@@ -69,12 +69,14 @@ impl Classroom {
         let students = Student::load_in_class(class_id, conn).unwrap();
         let teachers = Teacher::load_in_class(class_id, conn).unwrap();
         let admins = Admin::load_in_class(class_id, conn).unwrap();
-        match (students.iter().find(|x| &x.user_id == uid), 
-               teachers.iter().find(|x| &x.user_id == uid),
-               admins.iter().find(|x| &x.user_id == uid)) {
-                   (None, None, None) => false,
-                   _ => true,
-               }
+        match (
+            students.iter().find(|x| &x.user_id == uid),
+            teachers.iter().find(|x| &x.user_id == uid),
+            admins.iter().find(|x| &x.user_id == uid),
+        ) {
+            (None, None, None) => false,
+            _ => true,
+        }
     }
 }
 
@@ -102,12 +104,17 @@ impl Manipulable<Self> for Classroom {
 
     fn update(&self, update: Self, conn: &PgConnection) -> ThearningResult<Self> {
         diesel::update(classes::table.filter(classes::class_id.eq(&self.class_id)))
-            .set((classes::class_name.eq(&update.class_name),
-                  classes::class_creator.eq(&update.class_creator),
-                  classes::class_image.eq(&update.class_image),
-                  classes::class_description.eq(&update.class_description))).execute(conn)?;
+            .set((
+                classes::class_name.eq(&update.class_name),
+                classes::class_creator.eq(&update.class_creator),
+                classes::class_image.eq(&update.class_image),
+                classes::class_description.eq(&update.class_description),
+            ))
+            .execute(conn)?;
 
-        let res = classes::dsl::classes.find(&self.class_id).get_result::<Self>(conn)?;
+        let res = classes::dsl::classes
+            .find(&self.class_id)
+            .get_result::<Self>(conn)?;
 
         Ok(res)
     }

@@ -1,34 +1,37 @@
-use std::{env, fs};
-use std::path::Path;
 use chrono::Local;
-use diesel::{EqAll, QueryDsl, RunQueryDsl, PgConnection};
 use diesel::associations::HasTable;
+use diesel::{EqAll, PgConnection, QueryDsl, RunQueryDsl};
 use dotenv::var;
 use jsonwebtoken::{Algorithm, Header};
 use rocket::form::Form;
 use rocket::http::Status;
-use rocket::serde::json::Json;
 use rocket::serde::json::serde_json::json;
+use rocket::serde::json::Json;
 use rocket_dyn_templates::handlebars::JsonValue;
 use serde::{Deserialize, Serialize};
+use std::path::Path;
+use std::{env, fs};
 
-use crate::auth::{ApiKey, generate_token};
+use crate::auth::{generate_token, ApiKey};
 use crate::db;
 use crate::file_routes::process_image;
-use crate::files::models::{UploadedFile, UploadType};
+use crate::files::models::{UploadType, UploadedFile};
 use crate::files::routes;
 use crate::pagination::Paginate;
 use crate::schema::files::dsl::files;
 use crate::schema::files::{file_path, file_url};
 use crate::schema::users;
 use crate::schema::users::{email, profile_photo, user_id};
+use crate::traits::Manipulable;
 use crate::users::models::{InsertableUser, PasswordChange, Role, UpdatableUser, User};
 use crate::users::utils::is_email;
-use crate::traits::Manipulable;
 use crate::utils::update;
 
 #[post("/", data = "<user>")]
-async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
+async fn create<'a>(
+    user: Form<InsertableUser<'a>>,
+    connection: db::DbConn,
+) -> Result<Json<JsonValue>, Status> {
     let mut user = user.into_inner();
 
     let new_user = User {
@@ -55,9 +58,15 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
 
     let image_file = match user.image {
         Some(img) => {
-            match routes::process_image(img, UploadType::ProfilePhoto, &user.file_name.unwrap_or("file.jpg".to_string())).await {
+            match routes::process_image(
+                img,
+                UploadType::ProfilePhoto,
+                &user.file_name.unwrap_or("file.jpg".to_string()),
+            )
+            .await
+            {
                 Ok(v) => v,
-                Err(_) => return Err(Status::BadRequest)
+                Err(_) => return Err(Status::BadRequest),
             }
         }
         None => {
@@ -68,7 +77,8 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
 
     diesel::update(users::dsl::users.filter(user_id.eq_all(cloned_user.user_id)))
         .set(profile_photo.eq_all(image_file))
-        .execute(&*connection).unwrap();
+        .execute(&*connection)
+        .unwrap();
 
     Ok(Json(json!({"status": 200})))
 }
@@ -77,12 +87,12 @@ async fn create<'a>(user: Form<InsertableUser<'a>>, connection: db::DbConn) -> R
 fn delete_user(key: ApiKey, uid: String, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
     match User::get_role(&key.0, &*conn).unwrap() {
         Role::Admin => {
-            match diesel::delete(users::dsl::users.filter(user_id.eq_all(&uid)))
-                .execute(&*conn) {
+            match diesel::delete(users::dsl::users.filter(user_id.eq_all(&uid))).execute(&*conn) {
                 Ok(_) => {}
                 Err(_) => {
                     match diesel::delete(users::dsl::users.filter(email.eq_all(&uid)))
-                        .execute(&*conn) {
+                        .execute(&*conn)
+                    {
                         Ok(_) => {}
                         Err(_) => {
                             return Err(Status::BadRequest);
@@ -91,12 +101,11 @@ fn delete_user(key: ApiKey, uid: String, conn: db::DbConn) -> Result<Json<JsonVa
                 }
             }
         }
-        _ => return Err(Status::Unauthorized)
+        _ => return Err(Status::Unauthorized),
     }
 
     Ok(Json(json!({"status": 200})))
 }
-
 
 #[derive(Serialize, Deserialize)]
 struct Credentials {
@@ -133,7 +142,11 @@ fn login(
 }
 
 #[post("/update", data = "<data>")]
-async fn update_user<'a>(key: ApiKey, data: Form<UpdatableUser<'a>>, conn: db::DbConn) -> Result<Status, Status> {
+async fn update_user<'a>(
+    key: ApiKey,
+    data: Form<UpdatableUser<'a>>,
+    conn: db::DbConn,
+) -> Result<Status, Status> {
     let data = data.into_inner();
 
     let user = match User::find_user(&key.0, &conn) {
@@ -145,14 +158,21 @@ async fn update_user<'a>(key: ApiKey, data: Form<UpdatableUser<'a>>, conn: db::D
 
     let image: Option<String> = match data.image {
         Some(i) => {
-            match process_image(i, UploadType::ProfilePhoto, &data.file_name.unwrap_or("filename.jpg".to_string())).await {
+            match process_image(
+                i,
+                UploadType::ProfilePhoto,
+                &data.file_name.unwrap_or("filename.jpg".to_string()),
+            )
+            .await
+            {
                 Ok(res) => {
-                    let old_file = UploadedFile::get_from_url(&cloned_user.profile_photo, &conn).unwrap();
+                    let old_file =
+                        UploadedFile::get_from_url(&cloned_user.profile_photo, &conn).unwrap();
                     fs::remove_file(old_file.file_path).unwrap();
 
                     Some(res)
                 }
-                Err(_) => return Err(Status::BadRequest)
+                Err(_) => return Err(Status::BadRequest),
             }
         }
         None => None,
@@ -164,7 +184,7 @@ async fn update_user<'a>(key: ApiKey, data: Form<UpdatableUser<'a>>, conn: db::D
         fullname: data.fullname,
         profile_photo: match image {
             Some(i) => i,
-            None => cloned_user.profile_photo
+            None => cloned_user.profile_photo,
         },
         email: data.email,
         password: cloned_user.password,
@@ -177,24 +197,28 @@ async fn update_user<'a>(key: ApiKey, data: Form<UpdatableUser<'a>>, conn: db::D
 
     match update(user, updated_user, &conn) {
         Ok(_) => {}
-        Err(_) => return Err(Status::UnprocessableEntity)
+        Err(_) => return Err(Status::UnprocessableEntity),
     };
 
     Ok(Status::Ok)
 }
 
 #[post("/password_change", format = "application/json", data = "<data>")]
-fn password_change(key: ApiKey, data: Json<PasswordChange>, conn: db::DbConn) -> Result<Status, Status> {
+fn password_change(
+    key: ApiKey,
+    data: Json<PasswordChange>,
+    conn: db::DbConn,
+) -> Result<Status, Status> {
     let data = data.into_inner();
 
     let user = match User::find_user(&key.0, &conn) {
         Ok(v) => v,
-        Err(_) => return Err(Status::NotFound)
+        Err(_) => return Err(Status::NotFound),
     };
 
     match user.update_password(data, &conn) {
         Ok(_) => Ok(Status::Ok),
-        Err(_) => Err(Status::Unauthorized)
+        Err(_) => Err(Status::Unauthorized),
     }
 }
 
@@ -223,8 +247,7 @@ pub fn get_all(pages: Option<i64>, conn: db::DbConn) -> Result<Json<JsonValue>, 
     // ..
     let (user, total_pages) = match pages {
         Some(page) => {
-            let res = query.paginate(page)
-                .load::<(User, i64)>(&conn).unwrap();
+            let res = query.paginate(page).load::<(User, i64)>(&conn).unwrap();
 
             let total = res.get(0).map(|x| x.1).unwrap_or(0);
             let user: Vec<User> = res.into_iter().map(|x| x.0).collect();
@@ -242,12 +265,22 @@ pub fn get_all(pages: Option<i64>, conn: db::DbConn) -> Result<Json<JsonValue>, 
 pub fn get_user(uid: &String, conn: &PgConnection) -> Result<User, Status> {
     match User::find_user(uid, conn) {
         Ok(user) => Ok(user),
-        Err(_) => Err(Status::NotFound)
+        Err(_) => Err(Status::NotFound),
     }
 }
 
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     rocket
-        .mount("/api/user", routes![create, info, delete_user, password_change, update_user, get_all])
+        .mount(
+            "/api/user",
+            routes![
+                create,
+                info,
+                delete_user,
+                password_change,
+                update_user,
+                get_all
+            ],
+        )
         .mount("/api/auth", routes![login])
 }

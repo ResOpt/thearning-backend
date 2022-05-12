@@ -1,9 +1,9 @@
+use crate::errors::ThearningResult;
 use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime};
 use diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::errors::ThearningResult;
 
 use crate::schema::assignments;
 use crate::traits::Manipulable;
@@ -56,11 +56,16 @@ impl Assignment {
             .values(&*self)
             .execute(conn)?;
 
-        assignments::table.find(&*self.assignment_id).get_result::<Self>(conn)
+        assignments::table
+            .find(&*self.assignment_id)
+            .get_result::<Self>(conn)
     }
 
     pub fn load(class_id: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>> {
-        let a = assignments::table.filter(assignments::class_id.eq(class_id)).filter(assignments::draft.eq(false)).load::<Self>(conn)?;
+        let a = assignments::table
+            .filter(assignments::class_id.eq(class_id))
+            .filter(assignments::draft.eq(false))
+            .load::<Self>(conn)?;
 
         Ok(a)
     }
@@ -91,25 +96,32 @@ impl Manipulable<FillableAssignments> for Assignment {
     }
 
     fn update(&self, update: FillableAssignments, conn: &PgConnection) -> ThearningResult<Self> {
-        diesel::update(assignments::table.filter(assignments::assignment_id.eq(&self.assignment_id)))
-            .set((assignments::assignment_name.eq(&update.assignment_name),
-                  assignments::due_date.eq(&update.due_date),
-                  assignments::due_time.eq(&update.due_time),
-                  assignments::topic_id.eq(&update.topic_id),
-                  assignments::class_id.eq(&update.class_id),
-                  assignments::instructions.eq(&update.instructions),
-                  assignments::total_marks.eq(&update.total_marks),
-                  assignments::creator.eq(&update.creator),
-                  assignments::draft.eq(false)))
-            .execute(conn)?;
+        diesel::update(
+            assignments::table.filter(assignments::assignment_id.eq(&self.assignment_id)),
+        )
+        .set((
+            assignments::assignment_name.eq(&update.assignment_name),
+            assignments::due_date.eq(&update.due_date),
+            assignments::due_time.eq(&update.due_time),
+            assignments::topic_id.eq(&update.topic_id),
+            assignments::class_id.eq(&update.class_id),
+            assignments::instructions.eq(&update.instructions),
+            assignments::total_marks.eq(&update.total_marks),
+            assignments::creator.eq(&update.creator),
+            assignments::draft.eq(false),
+        ))
+        .execute(conn)?;
 
-        Ok(assignments::dsl::assignments.find(&self.assignment_id)
+        Ok(assignments::dsl::assignments
+            .find(&self.assignment_id)
             .get_result::<Self>(conn)?)
     }
 
     fn delete(&self, conn: &PgConnection) -> ThearningResult<Self> {
-        Ok(diesel::delete(assignments::table.find(&self.assignment_id))
-            .get_result::<Self>(conn)?)
+        Ok(
+            diesel::delete(assignments::table.find(&self.assignment_id))
+                .get_result::<Self>(conn)?,
+        )
     }
 
     fn get_all(conn: &PgConnection) -> ThearningResult<Vec<Self>> {

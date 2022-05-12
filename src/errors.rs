@@ -1,9 +1,9 @@
-use std::{env, fmt};
 use diesel::ConnectionError;
 use rocket::http::Status;
+use std::{env, fmt};
 
-use rocket::serde::json::{Json, Value as JsonValue};
 use rocket::serde::json::serde_json::json;
+use rocket::serde::json::{Json, Value as JsonValue};
 
 #[derive(Debug)]
 pub enum ErrorKind {

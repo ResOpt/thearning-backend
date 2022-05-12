@@ -1,18 +1,20 @@
 use std::env;
 
+use crate::assignments::models::Assignment;
 use chrono::Local;
-use diesel::{QueryDsl, RunQueryDsl};
 use diesel::dsl::any;
 use diesel::prelude::*;
-use rocket::{self, routes};
+use diesel::{QueryDsl, RunQueryDsl};
 use rocket::form::Form;
 use rocket::http::Status;
-use rocket::serde::json::Json;
 use rocket::serde::json::serde_json::json;
+use rocket::serde::json::Json;
+use rocket::{self, routes};
 use rocket_dyn_templates::handlebars::JsonValue;
-use crate::assignments::models::Assignment;
 
+use crate::assignments::routes::*;
 use crate::auth::ApiKey;
+use crate::auth::ClassGuard;
 use crate::classes::models::{Classroom, NewClassroom, NewTopic, Topic};
 use crate::classes::utils::{generate_class_code, get_class_codes};
 use crate::db;
@@ -22,13 +24,11 @@ use crate::files::models::UploadType;
 use crate::files::routes;
 use crate::schema::classes;
 use crate::schema::users;
-use crate::traits::{ClassUser, Manipulable};
-use crate::users::models::{Admin, Role, Student, Teacher, User, ResponseUser};
-use crate::utils::{load_classuser, update};
-use crate::assignments::routes::*;
-use crate::submissions::models::{Submissions, FillableSubmissions};
-use crate::auth::ClassGuard;
+use crate::submissions::models::{FillableSubmissions, Submissions};
 use crate::submissions::routes::*;
+use crate::traits::{ClassUser, Manipulable};
+use crate::users::models::{Admin, ResponseUser, Role, Student, Teacher, User};
+use crate::utils::{load_classuser, update};
 
 #[post("/", data = "<new_class>", rank = 1)]
 async fn create_classroom<'a>(
@@ -76,10 +76,16 @@ async fn create_classroom<'a>(
     }
 
     let image_file = match new_class.image {
-        Some(img) => match routes::process_image(img, UploadType::ClassPicture, &new_class.file_name.unwrap_or("filename.jpg".to_string())).await {
+        Some(img) => match routes::process_image(
+            img,
+            UploadType::ClassPicture,
+            &new_class.file_name.unwrap_or("filename.jpg".to_string()),
+        )
+        .await
+        {
             Ok(v) => v,
-            Err(_) => return Err(Status::BadRequest)
-        }
+            Err(_) => return Err(Status::BadRequest),
+        },
         None => {
             let url = env::var("SITE_URL").unwrap();
             format!("{}/api/media/img/placeholder.png", url)
@@ -136,19 +142,15 @@ pub fn join(
                 }
 
                 Ok(Json(json!({"status":200})))
-            },
-            Role::Teacher => {
-                match create_classuser::<Teacher>(&key.0, &class_id, &connection) {
-                    Ok(c) => Ok(Json(json!({"status":200}))),
-                    Err(_) => Err(Status::Conflict)
-                }
-            },
-            Role::Admin => {
-                match create_classuser::<Admin>(&key.0, &class_id, &connection) {
-                    Ok(c) => Ok(Json(json!({"status":200}))),
-                    Err(_) => Err(Status::Conflict)
-                }
             }
+            Role::Teacher => match create_classuser::<Teacher>(&key.0, &class_id, &connection) {
+                Ok(c) => Ok(Json(json!({"status":200}))),
+                Err(_) => Err(Status::Conflict),
+            },
+            Role::Admin => match create_classuser::<Admin>(&key.0, &class_id, &connection) {
+                Ok(c) => Ok(Json(json!({"status":200}))),
+                Err(_) => Err(Status::Conflict),
+            },
         }
     } else {
         Err(Status::BadRequest)
@@ -160,11 +162,9 @@ fn classrooms(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, St
     let user = users::table.find(&key.0).get_result::<User>(&*connection);
     match Role::from(user.as_ref().unwrap().status.as_str()) {
         Role::Student => {
-            let student = Student::find(&key.0, &connection)
-                .unwrap();
+            let student = Student::find(&key.0, &connection).unwrap();
 
-            let students_class_ids = student.into_iter()
-                .map(|i| i.class_id).collect::<Vec<_>>();
+            let students_class_ids = student.into_iter().map(|i| i.class_id).collect::<Vec<_>>();
 
             let students_classes = classes::table
                 .filter(classes::class_id.eq(any(students_class_ids)))
@@ -174,11 +174,9 @@ fn classrooms(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, St
             Ok(Json(json!({ "class_ids": students_classes })))
         }
         Role::Teacher => {
-            let teacher = Teacher::find(&key.0, &connection)
-                .unwrap();
+            let teacher = Teacher::find(&key.0, &connection).unwrap();
 
-            let teachers_class_ids = teacher.into_iter()
-                .map(|i| i.class_id).collect::<Vec<_>>();
+            let teachers_class_ids = teacher.into_iter().map(|i| i.class_id).collect::<Vec<_>>();
 
             let teachers_classes = classes::table
                 .filter(classes::class_id.eq(any(teachers_class_ids)))
@@ -188,11 +186,9 @@ fn classrooms(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, St
             Ok(Json(json!({ "class_ids": teachers_classes })))
         }
         Role::Admin => {
-            let admin = Admin::find(&key.0, &connection)
-                .unwrap();
+            let admin = Admin::find(&key.0, &connection).unwrap();
 
-            let admins_class_ids = admin.into_iter()
-                .map(|i| i.class_id).collect::<Vec<_>>();
+            let admins_class_ids = admin.into_iter().map(|i| i.class_id).collect::<Vec<_>>();
 
             let admins_classes = classes::table
                 .filter(classes::class_id.eq(any(admins_class_ids)))
@@ -205,7 +201,11 @@ fn classrooms(key: ApiKey, connection: db::DbConn) -> Result<Json<JsonValue>, St
 }
 
 #[post("/topic", data = "<new_topic>")]
-fn topic(key: ClassGuard, new_topic: Json<NewTopic>, connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
+fn topic(
+    key: ClassGuard,
+    new_topic: Json<NewTopic>,
+    connection: db::DbConn,
+) -> Result<Json<JsonValue>, Status> {
     let topic = new_topic.into_inner();
 
     match User::get_role(&key.0, &*connection).unwrap() {
@@ -227,24 +227,47 @@ fn topic(key: ClassGuard, new_topic: Json<NewTopic>, connection: db::DbConn) -> 
 
 #[get("/<class_id>", rank = 1)]
 fn class(key: ClassGuard, class_id: String, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
-
     let class = match Classroom::find(&class_id, &conn) {
         Ok(c) => c,
         Err(_) => return Err(Status::NotFound),
     };
 
-    let students = load_classuser::<Student>(&class_id, &conn).iter().map(|x| User::find_user(&x.user_id, &conn).unwrap()).collect::<Vec<ResponseUser>>();
-    let admins = load_classuser::<Admin>(&class_id, &conn).iter().map(|x| User::find_user(&x.user_id, &conn).unwrap()).collect::<Vec<ResponseUser>>();
-    let teachers = load_classuser::<Teacher>(&class_id, &conn).iter().map(|x| User::find_user(&x.user_id, &conn).unwrap()).collect::<Vec<ResponseUser>>();
+    let students = load_classuser::<Student>(&class_id, &conn)
+        .iter()
+        .map(|x| User::find_user(&x.user_id, &conn).unwrap())
+        .collect::<Vec<ResponseUser>>();
+    let admins = load_classuser::<Admin>(&class_id, &conn)
+        .iter()
+        .map(|x| User::find_user(&x.user_id, &conn).unwrap())
+        .collect::<Vec<ResponseUser>>();
+    let teachers = load_classuser::<Teacher>(&class_id, &conn)
+        .iter()
+        .map(|x| User::find_user(&x.user_id, &conn).unwrap())
+        .collect::<Vec<ResponseUser>>();
 
     let assignments = Assignment::load(&class.class_id, &conn).unwrap();
 
-    Ok(Json(json!({"class": class, "students": students, "admins": admins, "teachers": teachers, "assignments":assignments})))
+    Ok(Json(
+        json!({"class": class, "students": students, "admins": admins, "teachers": teachers, "assignments":assignments}),
+    ))
 }
 
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     rocket.mount(
         "/api/classroom",
-        routes![create_classroom, join, classrooms, topic, class, draft, update_assignment, delete_assignment, students_assignment, teachers_assignment, submit_submission, unsubmit_submission],
+        routes![
+            create_classroom,
+            join,
+            classrooms,
+            topic,
+            class,
+            draft,
+            update_assignment,
+            delete_assignment,
+            students_assignment,
+            teachers_assignment,
+            submit_submission,
+            unsubmit_submission
+        ],
     )
 }
