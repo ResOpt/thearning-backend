@@ -12,37 +12,57 @@ use crate::utils::generate_random_id;
 #[derive(Serialize, Deserialize, Queryable, Insertable)]
 #[table_name = "comments"]
 pub struct Comment {
-    id: String,
-    user_id: String,
-    assignment_id: Option<String>,
-    announcement_id: Option<String>,
-    body: String,
-    created_at: NaiveDateTime,
+    pub id: String,
+    pub user_id: String,
+    pub assignment_id: Option<String>,
+    pub announcement_id: Option<String>,
+    pub body: String,
+    pub created_at: NaiveDateTime,
 }
 
 #[derive(Serialize, Deserialize, Queryable, Insertable)]
 #[table_name = "private_comments"]
 pub struct PrivateComment {
-    id: String,
-    user_id: String,
-    submission_id: Option<String>,
-    body: String,
-    created_at: NaiveDateTime,
+    pub id: String,
+    pub user_id: String,
+    pub submission_id: Option<String>,
+    pub body: String,
+    pub created_at: NaiveDateTime,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct FillableComment {
-    user_id: String,
-    assignment_id: Option<String>,
-    announcement_id: Option<String>,
-    body: String,
+    pub user_id: Option<String>,
+    pub assignment_id: Option<String>,
+    pub announcement_id: Option<String>,
+    pub body: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct FillablePrivateComment {
-    user_id: Option<String>,
-    submission_id: Option<String>,
-    body: String,
+    pub user_id: Option<String>,
+    pub submission_id: Option<String>,
+    pub body: String,
+}
+
+impl Comment {
+    pub fn find_comment(id: &String, conn: &PgConnection) -> ThearningResult<Self> {
+        Ok(comments::table.find(id).get_result::<Self>(conn)?)
+    }
+
+    pub fn load_by_assignment(assignment_id: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>> {
+        Ok(comments::table.filter(comments::assignment_id.eq(assignment_id)).load::<Comment>(conn)?)
+    }
+}
+
+impl PrivateComment {
+    pub fn find_comment(id: &String, conn: &PgConnection) -> ThearningResult<Self> {
+        Ok(private_comments::table.find(id).get_result::<Self>(conn)?)
+    }
+
+    pub fn load_by_submission(submission_id: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>> {
+        Ok(private_comments::table.filter(private_comments::submission_id.eq(submission_id)).load::<PrivateComment>(conn)?)
+    }
 }
 
 impl Manipulable<FillableComment> for Comment {
@@ -50,7 +70,7 @@ impl Manipulable<FillableComment> for Comment {
 
         let new_comment = Comment {
             id: format!("{}{}", generate_random_id(), generate_random_id()),
-            user_id: new_data.user_id,
+            user_id: new_data.user_id.unwrap(),
             assignment_id: new_data.assignment_id,
             announcement_id: new_data.announcement_id,
             body: new_data.body,

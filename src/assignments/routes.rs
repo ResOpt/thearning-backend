@@ -21,6 +21,7 @@ use crate::utils::{update, generate_random_id};
 use crate::assignments::models::AssignmentData;
 use crate::traits::Embedable;
 use crate::submissions::models::{Submissions, FillableSubmissions};
+use crate::comments::models::{Comment, PrivateComment};
 
 #[post("/<class_id>/assignments")]
 pub fn draft(key: ClassGuard, class_id: &str, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
@@ -146,9 +147,13 @@ pub fn students_assignment(key: ClassGuard, class_id: &str, assignment_id: &str,
         Err(_) => return Err(Status::NotFound)
     };
 
+    let comments = Comment::load_by_assignment(&assignment.assignment_id, &conn).unwrap();
+
     let assignment_attachments = attachments::table.filter(attachments::assignment_id.eq(&assignment.assignment_id)).load::<Attachment>(&*conn).unwrap();
 
     let submission = Submissions::get_by_id(&assignment_id.to_string(), &user.user_id, &conn).unwrap();
+
+    let private_comments = PrivateComment::load_by_submission(&submission.submission_id, &conn).unwrap();
 
     let submission_attachments = attachments::table.filter(attachments::submission_id.eq(&submission.submission_id)).load::<Attachment>(&*conn).unwrap();
 
@@ -156,7 +161,7 @@ pub fn students_assignment(key: ClassGuard, class_id: &str, assignment_id: &str,
 
     let submission_resp = get_attachments(submission_attachments, &conn);
 
-    Ok(Json(json!({"assignment_attachments": assignment_resp, "assignment": assignment, "submission": submission, "submission_attachments": submission_resp})))
+    Ok(Json(json!({"assignment_attachments": assignment_resp, "assignment": assignment, "submission": submission, "submission_attachments": submission_resp, "comments": comments, "private_comments": comments})))
 }
 
 #[get("/<class_id>/assignments/teachers/<assignment_id>")]
