@@ -9,14 +9,15 @@ use rocket::serde::json::Json;
 use rocket::serde::json::serde_json::json;
 use rocket_dyn_templates::handlebars::JsonValue;
 
-use crate::auth::ApiKey;
+use crate::auth::ClassGuard;
 use crate::comments::models::{Comment, FillableComment};
 use crate::db;
 use crate::traits::Manipulable;
 use crate::users::models::User;
+use crate::errors::ThearningResult;
 
 #[post("/", data = "<data>")]
-fn post_comment(key: ApiKey, data: Json<FillableComment>, conn: db::DbConn) -> Result<Status, Status> {
+fn post_comment(key: ClassGuard, data: Json<FillableComment>, conn: db::DbConn) -> Result<Status, Status> {
     let data = data.into_inner();
 
     let user = match User::find_user(&key.0, &conn) {
@@ -30,4 +31,9 @@ fn post_comment(key: ApiKey, data: Json<FillableComment>, conn: db::DbConn) -> R
     };
 
     Ok(Status::Ok)
+}
+
+#[post("/", data = "<data>")]
+fn post_private_comment(key: ClassGuard, data: String,  conn: db::DbConn) -> Result<Status, Status> {
+    todo!()
 }

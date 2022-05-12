@@ -97,8 +97,7 @@ table! {
     private_comments (id) {
         id -> Varchar,
         user_id -> Varchar,
-        assignment_id -> Nullable<Varchar>,
-        announcement_id -> Nullable<Varchar>,
+        submission_id -> Nullable<Varchar>,
         body -> Text,
         created_at -> Timestamp,
     }
@@ -176,8 +175,7 @@ joinable!(classes -> users (class_creator));
 joinable!(comments -> announcements (announcement_id));
 joinable!(comments -> assignments (assignment_id));
 joinable!(comments -> users (user_id));
-joinable!(private_comments -> announcements (announcement_id));
-joinable!(private_comments -> assignments (assignment_id));
+joinable!(private_comments -> submissions (submission_id));
 joinable!(private_comments -> users (user_id));
 joinable!(students -> classes (class_id));
 joinable!(students -> users (user_id));
