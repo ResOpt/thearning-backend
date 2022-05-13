@@ -73,7 +73,7 @@ pub fn unsubmit_submission(
         return Err(Status::BadRequest);
     }
 
-    match submission.unsubmit(&conn) {
+    match submission.submit(&conn) {
         Ok(_) => Ok(Status::Ok),
         Err(_) => Err(Status::InternalServerError),
     }

@@ -4,8 +4,8 @@ use rocket::http::Status;
 use rocket::serde::json::serde_json::json;
 use rocket::serde::json::Json;
 use rocket_dyn_templates::handlebars::JsonValue;
-use scrape_scrape::data::{OtherData, Scrapable, WikipediaData, YoutubeData};
-use scrape_scrape::{get_raw_data, Url, UrlData};
+use emotional_scraper::data::{OtherData, Scrapable, WikipediaData, YoutubeData};
+use emotional_scraper::{get_raw_data, Url, UrlData};
 use serde::{Deserialize, Serialize};
 
 use crate::attachments::models::{Attachment, FillableAttachment};

@@ -82,7 +82,7 @@ pub fn delete_assignment(
         Err(_) => return Err(Status::NotFound),
     };
 
-    if !user.is_admin() || !user.is_teacher() {
+    if user.is_student() {
         return Err(Status::Forbidden);
     }
 
@@ -178,7 +178,7 @@ pub fn students_assignment(
     let submission_resp = get_attachments(submission_attachments, &conn);
 
     Ok(Json(
-        json!({"assignment_attachments": assignment_resp, "assignment": assignment, "submission": submission, "submission_attachments": submission_resp, "comments": comments, "private_comments": comments}),
+        json!({"assignment_attachments": assignment_resp, "assignment": assignment, "submission": submission, "submission_attachments": submission_resp, "comments": comments, "private_comments": private_comments}),
     ))
 }
 

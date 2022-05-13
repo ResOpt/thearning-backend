@@ -2,5 +2,5 @@
 .idea
 media/
 .env
-scrape-scrape/target
+emotional-scraper/target
 .vscode
