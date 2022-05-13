@@ -53,7 +53,7 @@ jobs:
           mkdir -p media/classes media/profiles media/attachments
           cargo test -- --test-threads 1
           rm -rf media
-      - name: Tests - scrape-scrape
+      - name: Tests - emotional-scraper
         run:
-          cd scrape-scrape;
+          cd emotional-scraper;
           cargo test
