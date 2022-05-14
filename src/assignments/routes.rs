@@ -19,7 +19,7 @@ use crate::schema::attachments;
 use crate::submissions::models::{FillableSubmissions, Submissions};
 use crate::traits::Embedable;
 use crate::traits::{ClassUser, Manipulable};
-use crate::users::models::{Student, User};
+use crate::users::models::{Student, User, ResponseUser};
 use crate::users::routes::get_user;
 use crate::utils::{generate_random_id, update};
 
@@ -134,6 +134,12 @@ fn get_attachments(vec: Vec<Attachment>, conn: &PgConnection) -> Vec<AssignmentR
     res
 }
 
+#[derive(Serialize)]
+struct UserComment<T: Serialize> {
+    commenter: Vec<ResponseUser>,
+    comment: Vec<T>,
+}
+
 #[get("/<class_id>/assignments/students/<assignment_id>")]
 pub fn students_assignment(
     key: ClassGuard,
@@ -157,6 +163,16 @@ pub fn students_assignment(
 
     let comments = Comment::load_by_assignment(&assignment.assignment_id, &conn).unwrap();
 
+    let user_comments = comments
+        .iter()
+        .map(|x| User::find_user(&x.user_id, &conn).unwrap())
+        .collect::<Vec<ResponseUser>>();
+
+    let comment_response = UserComment {
+        commenter: user_comments,
+        comment: comments,
+    };
+
     let assignment_attachments = attachments::table
         .filter(attachments::assignment_id.eq(&assignment.assignment_id))
         .load::<Attachment>(&*conn)
@@ -168,6 +184,16 @@ pub fn students_assignment(
     let private_comments =
         PrivateComment::load_by_submission(&submission.submission_id, &conn).unwrap();
 
+    let user_private_comments = private_comments
+    .iter()
+    .map(|x| User::find_user(&x.user_id, &conn).unwrap())
+    .collect::<Vec<ResponseUser>>();
+
+    let private_comment_response = UserComment {
+        commenter: user_private_comments,
+        comment: private_comments
+    };
+
     let submission_attachments = attachments::table
         .filter(attachments::submission_id.eq(&submission.submission_id))
         .load::<Attachment>(&*conn)
@@ -178,7 +204,7 @@ pub fn students_assignment(
     let submission_resp = get_attachments(submission_attachments, &conn);
 
     Ok(Json(
-        json!({"assignment_attachments": assignment_resp, "assignment": assignment, "submission": submission, "submission_attachments": submission_resp, "comments": comments, "private_comments": private_comments}),
+        json!({"assignment_attachments": assignment_resp, "assignment": assignment, "submission": submission, "submission_attachments": submission_resp, "comments": comment_response, "private_comments": private_comment_response}),
     ))
 }
 
