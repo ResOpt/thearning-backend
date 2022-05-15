@@ -53,7 +53,7 @@ pub async fn process_image<'a>(
         UploadType::ProfilePhoto => {
             format!(
                 "{}/{}-{}",
-                format!("http://{}/api/media/img/profiles", url),
+                format!("{}/api/media/img/profiles", url),
                 &file_id,
                 filename
             )
@@ -61,7 +61,7 @@ pub async fn process_image<'a>(
         UploadType::ClassPicture => {
             format!(
                 "{}/{}-{}",
-                format!("http://{}/api/media/img/classes", url),
+                format!("{}/api/media/img/classes", url),
                 &file_id,
                 filename
             )
@@ -69,7 +69,7 @@ pub async fn process_image<'a>(
         UploadType::AssignmentFile => {
             format!(
                 "{}/{}-{}",
-                format!("http://{}/api/media/attachments", url),
+                format!("{}/api/media/attachments", url),
                 &file_id,
                 filename
             )
@@ -112,7 +112,7 @@ pub async fn process_attachment<'a>(
 
     let url = format!(
         "{}/{}-{}.{}",
-        format!("http://{}/api/media/attachments", url),
+        format!("{}/api/media/attachments", url),
         &file_id,
         name,
         ext
