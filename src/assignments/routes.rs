@@ -10,7 +10,7 @@ use crate::assignments::models::AssignmentData;
 use crate::assignments::models::{Assignment, FillableAssignments};
 use crate::attachments::models::Attachment;
 use crate::auth::{ApiKey, ClassGuard};
-use crate::comments::models::{Comment, PrivateComment};
+use crate::comments::models::{Comment, Commenter, PrivateComment};
 use crate::db;
 use crate::db::DbConn;
 use crate::files::models::UploadedFile;
@@ -134,10 +134,28 @@ fn get_attachments(vec: Vec<Attachment>, conn: &PgConnection) -> Vec<AssignmentR
     res
 }
 
-#[derive(Serialize)]
-struct UserComment<T: Serialize> {
-    commenter: Vec<ResponseUser>,
-    comment: Vec<T>,
+fn get_comments<T>(vec: Vec<T>, conn: &PgConnection) -> Vec<UserComment<T>>
+where T: Commenter<Output=String> + Serialize + Clone {
+    let mut res = Vec::<UserComment<T>>::new();
+
+    for thing in vec {
+        let resp = UserComment {
+            commenter: {
+                let user = User::find_user(thing.get_user_id(), &conn).unwrap();
+                ResponseUser::from(user)
+            },
+            comment: thing.clone(),
+        };
+        res.push(resp)
+    }
+
+    res
+}
+
+#[derive(Serialize, Clone)]
+struct UserComment<T: Serialize + Clone + Commenter> {
+    commenter: ResponseUser,
+    comment: T,
 }
 
 #[get("/<class_id>/assignments/students/<assignment_id>")]
@@ -163,15 +181,7 @@ pub fn students_assignment(
 
     let comments = Comment::load_by_assignment(&assignment.assignment_id, &conn).unwrap();
 
-    let user_comments = comments
-        .iter()
-        .map(|x| User::find_user(&x.user_id, &conn).unwrap())
-        .collect::<Vec<ResponseUser>>();
-
-    let comment_response = UserComment {
-        commenter: user_comments,
-        comment: comments,
-    };
+    let comment_response = get_comments(comments, &conn);
 
     let assignment_attachments = attachments::table
         .filter(attachments::assignment_id.eq(&assignment.assignment_id))
@@ -184,15 +194,7 @@ pub fn students_assignment(
     let private_comments =
         PrivateComment::load_by_submission(&submission.submission_id, &conn).unwrap();
 
-    let user_private_comments = private_comments
-    .iter()
-    .map(|x| User::find_user(&x.user_id, &conn).unwrap())
-    .collect::<Vec<ResponseUser>>();
-
-    let private_comment_response = UserComment {
-        commenter: user_private_comments,
-        comment: private_comments
-    };
+    let private_comment_response = get_comments(private_comments, &conn);
 
     let submission_attachments = attachments::table
         .filter(attachments::submission_id.eq(&submission.submission_id))

@@ -204,7 +204,7 @@ impl User {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ResponseUser {
     pub user_id: String,
     pub fullname: String,
@@ -215,6 +215,22 @@ pub struct ResponseUser {
     pub bio: String,
     pub status: String,
     pub created_at: NaiveDateTime,
+}
+
+impl From<User> for ResponseUser {
+    fn from(data: User) -> Self {
+        Self {
+            user_id: data.user_id,
+            fullname: data.fullname,
+            profile_photo: data.profile_photo,
+            email: data.email,
+            birth_place: data.birth_place,
+            birth_date: data.birth_date,
+            bio: data.bio,
+            status: data.status,
+            created_at: data.created_at,
+        }
+    }
 }
 
 impl FromIterator<User> for Vec<ResponseUser> {

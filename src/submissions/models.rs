@@ -59,6 +59,12 @@ impl Submissions {
             .get_result::<Self>(conn)?)
     }
 
+    pub fn load_by_assignment(assignment_id: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>> {
+        Ok(submissions::table
+            .filter(submissions::assignment_id.eq(assignment_id))
+            .load::<Self>(conn)?)
+    }
+
     pub fn unsubmit(&self, conn: &PgConnection) -> ThearningResult<Self> {
         diesel::update(
             submissions::table.filter(submissions::submission_id.eq(&self.submission_id)),

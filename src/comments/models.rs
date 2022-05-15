@@ -9,7 +9,7 @@ use crate::schema::{comments, private_comments};
 use crate::traits::Manipulable;
 use crate::utils::generate_random_id;
 
-#[derive(Serialize, Deserialize, Queryable, Insertable)]
+#[derive(Serialize, Deserialize, Queryable, Insertable, Clone)]
 #[table_name = "comments"]
 pub struct Comment {
     pub id: String,
@@ -20,7 +20,7 @@ pub struct Comment {
     pub created_at: NaiveDateTime,
 }
 
-#[derive(Serialize, Deserialize, Queryable, Insertable)]
+#[derive(Serialize, Deserialize, Queryable, Insertable, Clone)]
 #[table_name = "private_comments"]
 pub struct PrivateComment {
     pub id: String,
@@ -141,5 +141,25 @@ impl Manipulable<FillablePrivateComment> for PrivateComment {
 
     fn get_all(conn: &PgConnection) -> ThearningResult<Vec<Self>> {
         todo!()
+    }
+}
+
+pub trait Commenter {
+    type Output;
+    fn get_user_id(&self) -> &Self::Output;
+}
+
+impl Commenter for Comment {
+    type Output = String;
+
+    fn get_user_id(&self) -> &Self::Output {
+        &self.user_id
+    }
+}
+impl Commenter for PrivateComment {
+    type Output = String;
+
+    fn get_user_id(&self) -> &Self::Output {
+        &self.user_id
     }
 }
