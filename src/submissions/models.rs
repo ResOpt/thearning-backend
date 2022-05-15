@@ -119,13 +119,42 @@ impl Submissions {
 
 impl Manipulable<FillableSubmissions> for Submissions {
     fn create(new_data: FillableSubmissions, conn: &PgConnection) -> ThearningResult<Self> {
+
+        let assignment = Assignment::get_by_id(&new_data.assignment_id, conn)?;
+
+        let now = Local::now().naive_local();
+
+        let now_date = Local::today().naive_local();
+
+        let now_time = now.time();
+
+        let submitted = NaiveDateTime::new(now_date, now_time);
+
+        let due = match (assignment.due_date, assignment.due_time) {
+            (Some(a), Some(b)) => Some(NaiveDateTime::new(a, b)),
+            (Some(a), None) => Some(NaiveDateTime::new(a, NaiveTime::from_hms(23, 59, 59))),
+            (None, Some(b)) => Some(NaiveDateTime::new(Local::today().naive_local(), b)),
+            (None, None) => None,
+        };
+
+        let on_time = match due {
+            Some(d) => {
+                if submitted < d {
+                    Some(true)
+                } else {
+                    Some(false)
+                }
+            }
+            None => None,
+        };
+        
         let submission = Submissions {
             submission_id: format!("{}{}", generate_random_id(), generate_random_id()),
             assignment_id: new_data.assignment_id,
             user_id: new_data.user_id,
             submitted_date: Some(Local::today().naive_local()),
             submitted_time: Some(Local::now().naive_local().time()),
-            on_time: None,
+            on_time,
             marks_allotted: None,
             submitted: false,
             created_at: Local::now().naive_local(),
