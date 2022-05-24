@@ -1,0 +1,28 @@
+name: Build and Test Emotional Scraper
+
+on: [push]
+
+jobs:
+  build:
+    name: Build Emotional Scraper
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustc, cargo, rust-std, clippy, rustfmt
+      
+      - name: Build
+        run: |
+          cd emotional-scraper/
+          cargo build
+      
+      - name: Test
+        run: |       
+          cd emotional-scraper/
+          cargo test
+

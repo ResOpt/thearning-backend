@@ -231,10 +231,17 @@ pub fn teachers_assignment(
         Err(_) => return Err(Status::NotFound),
     };
 
-    let submission = match Submissions::get_by_assignment(&assignment.assignment_id, &conn) {
-        Ok(s) => Some(s),
-        Err(_) => None,
+    let submission = match Submissions::load_by_assignment(&assignment.assignment_id, &conn) {
+        Ok(s) => s,
+        Err(_) => Vec::<Submissions>::new(),
     };
+
+    for sm in &submission {
+        let attachment = attachments::table.filter(attachments::submission_id.eq(&sm.submission_id))
+        .load::<Attachment>(&*conn)
+        .unwrap();
+        
+    }
 
     let assignment_attachments = attachments::table
         .filter(attachments::assignment_id.eq(&assignment.assignment_id))

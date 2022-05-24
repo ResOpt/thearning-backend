@@ -94,6 +94,15 @@ table! {
 }
 
 table! {
+    marks (id) {
+        id -> Varchar,
+        submission_id -> Nullable<Varchar>,
+        marker_id -> Nullable<Varchar>,
+        student_id -> Nullable<Varchar>,
+    }
+}
+
+table! {
     private_comments (id) {
         id -> Varchar,
         user_id -> Varchar,
@@ -175,6 +184,7 @@ joinable!(classes -> users (class_creator));
 joinable!(comments -> announcements (announcement_id));
 joinable!(comments -> assignments (assignment_id));
 joinable!(comments -> users (user_id));
+joinable!(marks -> submissions (submission_id));
 joinable!(private_comments -> submissions (submission_id));
 joinable!(private_comments -> users (user_id));
 joinable!(students -> classes (class_id));
@@ -194,6 +204,7 @@ allow_tables_to_appear_in_same_query!(
     comments,
     files,
     links,
+    marks,
     private_comments,
     students,
     submissions,

@@ -1,10 +1,10 @@
-name: Build and Test
+name: Build and Test Thearning
 
 on: [push]
 
 jobs:
   build:
-    name: Build Ubuntu
+    name: Build Thearning
     runs-on: ubuntu-latest
     services:
       postgres:
