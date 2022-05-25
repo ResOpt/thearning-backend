@@ -5,6 +5,7 @@ use rocket::serde::json::serde_json::json;
 use rocket::serde::json::Json;
 use rocket::serde::{Deserialize, Serialize};
 use rocket_dyn_templates::handlebars::JsonValue;
+use tokio;
 
 use crate::assignments::models::AssignmentData;
 use crate::assignments::models::{Assignment, FillableAssignments};
@@ -21,7 +22,7 @@ use crate::traits::Embedable;
 use crate::traits::{ClassUser, Manipulable};
 use crate::users::models::{Student, User, ResponseUser};
 use crate::users::routes::get_user;
-use crate::utils::{generate_random_id, update};
+use crate::utils::{generate_random_id, update, mailer};
 
 #[post("/<class_id>/assignments")]
 pub fn draft(key: ClassGuard, class_id: &str, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
@@ -48,10 +49,10 @@ pub async fn update_assignment(
 
     let students = Student::load_in_class(&class_id.to_string(), &conn).unwrap();
 
-    for i in students {
+    for i in &students {
         let new_submission = FillableSubmissions {
             assignment_id: assignment.assignment_id.clone(),
-            user_id: i.user_id,
+            user_id: i.user_id.clone(),
         };
         match Submissions::create(new_submission, &conn) {
             Ok(s) => (),
@@ -65,7 +66,50 @@ pub async fn update_assignment(
 
     let new = update(assignment, assignment_data, &conn).unwrap();
 
+    let creator = User::find_user(&new.creator.as_ref().unwrap(), &conn).unwrap();
+
+    let mut emails = Vec::new();
+
+    for i in &students {
+        emails.push(User::find_user(&i.user_id, &conn).unwrap().email)
+    }
+    
+    send_mail(creator, emails, new.clone()).await;
+
     Ok(Json(json!({ "new_assignment": new })))
+}
+
+async fn send_mail(user: User, emails: Vec<String>, assignment: Assignment) {
+
+    let mail = mailer().0;
+
+    let server = mailer().1;
+
+    let html = format!(r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello from Lettre!</title>
+</head>
+<body>
+    <div style="display: block; align-items: center;">
+        <h2 style="font-family: Arial, Helvetica, sans-serif;">New Assignment from {}: {}</h2>
+        <br>
+        <h4 style="font-family: Arial, Helvetica, sans-serif;">{}</h4>
+    </div>
+</body>
+</html>"#, &user.fullname, &assignment.assignment_name.unwrap(), &assignment.instructions.unwrap());
+
+    let mail = mail.clone().server(server)
+                            .subject("New Assignment");
+
+    for email in emails {
+        let send = mail.clone().to(email.as_str()).message(html.as_str(), "H").clone().send();
+        let job = tokio::task::spawn(async move {
+            send.await.unwrap()
+        });
+    }
 }
 
 #[delete("/<class_id>/assignments/<assignment_id>")]

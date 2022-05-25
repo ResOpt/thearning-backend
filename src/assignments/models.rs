@@ -9,7 +9,7 @@ use crate::schema::assignments;
 use crate::traits::Manipulable;
 use crate::utils::generate_random_id;
 
-#[derive(Serialize, Deserialize, Queryable, Insertable)]
+#[derive(Serialize, Deserialize, Queryable, Insertable, Clone)]
 #[table_name = "assignments"]
 pub struct Assignment {
     pub assignment_id: String,

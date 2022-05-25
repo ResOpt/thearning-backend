@@ -1,4 +1,5 @@
 use std::ops::Deref;
+use std::env;
 
 use crate::errors::ThearningResult;
 use chrono::NaiveDate;
@@ -7,8 +8,17 @@ use rand::Rng;
 use rocket::form;
 use rocket::form::{DataField, FromFormField, ValueField};
 use serde::{Deserialize, Serialize};
+use ayaya::Mailer;
 
 use crate::traits::{ClassUser, Manipulable};
+
+pub fn mailer() -> (Mailer, String) {
+    let email = env::var("EMAIL").unwrap();
+    let password = env::var("EMAIL_PASSWORD").unwrap();
+    let server = env::var("SMTP_SERVER").unwrap();
+
+   (Mailer::build(email, password), server)
+}
 
 pub fn generate_random_id() -> i32 {
     let mut rng = rand::thread_rng();

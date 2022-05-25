@@ -91,7 +91,7 @@ pub struct PasswordChange<'a> {
 }
 
 #[derive(
-    Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable, Debug,
+    Serialize, Deserialize, Queryable, AsChangeset, Insertable, Associations, Identifiable, Debug, Clone
 )]
 #[belongs_to(User)]
 #[table_name = "students"]

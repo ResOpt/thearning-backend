@@ -26,3 +26,4 @@ hmac = "0.12.0"
 sha2 = "0.10.1"
 rocket_cors = "0.6.0-alpha1"
 chrono = { version = "0.4.19", features=["serde"] }
+tokio = { version = "1.18.2", features = ["rt"] }

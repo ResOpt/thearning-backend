@@ -1,2 +1,4 @@
 .env linguist-language=Rust
-scripts linguist-language=Rust
+scripts/* linguist-language=Rust
+emotional-scraper/* linguist-language=Rust
+kosuzers/* linguist-language=Rust

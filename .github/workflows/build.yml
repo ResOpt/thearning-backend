@@ -48,12 +48,8 @@ jobs:
       - name: Build
         run: |
           cargo build
-      - name: Tests - Thearning
+      - name: Test
         run: |
           mkdir -p media/classes media/profiles media/attachments
           cargo test -- --test-threads 1
           rm -rf media
-      - name: Tests - emotional-scraper
-        run:
-          cd emotional-scraper;
-          cargo test
