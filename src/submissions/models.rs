@@ -53,6 +53,13 @@ impl Submissions {
             .get_result::<Self>(conn)?)
     }
 
+    pub fn load_unsubmitted(assignment_id: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>> {
+        Ok(submissions::table
+            .filter(submissions::assignment_id.eq(assignment_id))
+            .filter(submissions::submitted.eq(false))
+            .load::<Self>(conn)?)
+    }
+
     pub fn get_by_assignment(assignment_id: &String, conn: &PgConnection) -> ThearningResult<Self> {
         Ok(submissions::table
             .filter(submissions::assignment_id.eq(assignment_id))
@@ -115,6 +122,45 @@ impl Submissions {
             submissions::submitted_time.eq(&now_time),
             submissions::on_time.eq(on_time),
         ))
+        .execute(conn)?;
+
+        Ok(submissions::dsl::submissions
+            .find(&self.submission_id)
+            .get_result::<Self>(conn)?)
+    }
+
+    pub fn update_on_time(&self, assignment: &Assignment, conn: &PgConnection) -> ThearningResult<Self> {
+
+        let now = Local::now().naive_local();
+
+        let now_date = Local::today().naive_local();
+
+        let now_time = now.time();
+
+        let submitted = NaiveDateTime::new(now_date, now_time);
+
+        let due = match (assignment.due_date, assignment.due_time) {
+            (Some(a), Some(b)) => Some(NaiveDateTime::new(a, b)),
+            (Some(a), None) => Some(NaiveDateTime::new(a, NaiveTime::from_hms(23, 59, 59))),
+            (None, Some(b)) => Some(NaiveDateTime::new(Local::today().naive_local(), b)),
+            (None, None) => None,
+        };
+
+        let on_time = match due {
+            Some(d) => {
+                if submitted < d {
+                    Some(true)
+                } else {
+                    Some(false)
+                }
+            }
+            None => None,
+        };
+
+        diesel::update(
+            submissions::table.filter(submissions::submission_id.eq(&self.submission_id)),
+        )
+        .set(submissions::on_time.eq(on_time))
         .execute(conn)?;
 
         Ok(submissions::dsl::submissions

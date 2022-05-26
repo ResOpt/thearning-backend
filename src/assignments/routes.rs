@@ -178,8 +178,8 @@ fn get_attachments(vec: Vec<Attachment>, conn: &PgConnection) -> Vec<AssignmentR
     res
 }
 
-fn get_comments<T>(vec: Vec<T>, conn: &PgConnection) -> Vec<UserComment<T>>
-where T: Commenter<Output=String> + Serialize + Clone {
+fn get_comments<'a, T>(vec: &'a Vec<T>, conn: &PgConnection) -> Vec<UserComment<'a, T>>
+where T: Commenter<Output=String> + Serialize {
     let mut res = Vec::<UserComment<T>>::new();
 
     for thing in vec {
@@ -188,7 +188,7 @@ where T: Commenter<Output=String> + Serialize + Clone {
                 let user = User::find_user(thing.get_user_id(), &conn).unwrap();
                 ResponseUser::from(user)
             },
-            comment: thing.clone(),
+            comment: thing,
         };
         res.push(resp)
     }
@@ -196,10 +196,10 @@ where T: Commenter<Output=String> + Serialize + Clone {
     res
 }
 
-#[derive(Serialize, Clone)]
-struct UserComment<T: Serialize + Clone + Commenter> {
+#[derive(Serialize)]
+struct UserComment<'a, T: Serialize + Commenter> {
     commenter: ResponseUser,
-    comment: T,
+    comment: &'a T,
 }
 
 #[get("/<class_id>/assignments/students/<assignment_id>")]
@@ -225,7 +225,7 @@ pub fn students_assignment(
 
     let comments = Comment::load_by_assignment(&assignment.assignment_id, &conn).unwrap();
 
-    let comment_response = get_comments(comments, &conn);
+    let comment_response = get_comments(&comments, &conn);
 
     let assignment_attachments = attachments::table
         .filter(attachments::assignment_id.eq(&assignment.assignment_id))
@@ -238,7 +238,7 @@ pub fn students_assignment(
     let private_comments =
         PrivateComment::load_by_submission(&submission.submission_id, &conn).unwrap();
 
-    let private_comment_response = get_comments(private_comments, &conn);
+    let private_comment_response = get_comments(&private_comments, &conn);
 
     let submission_attachments = attachments::table
         .filter(attachments::submission_id.eq(&submission.submission_id))
@@ -252,6 +252,13 @@ pub fn students_assignment(
     Ok(Json(
         json!({"assignment_attachments": assignment_resp, "assignment": assignment, "submission": submission, "submission_attachments": submission_resp, "comments": comment_response, "private_comments": private_comment_response}),
     ))
+}
+
+#[derive(Serialize)]
+struct SubmissionResponse<'a> {
+    submission: &'a Submissions,
+    attachment_amount: i32,
+    user: ResponseUser,
 }
 
 #[get("/<class_id>/assignments/teachers/<assignment_id>")]
@@ -275,16 +282,31 @@ pub fn teachers_assignment(
         Err(_) => return Err(Status::NotFound),
     };
 
+    let unsubmitted = Submissions::load_unsubmitted(&assignment.assignment_id, &conn).unwrap();
+
+    if unsubmitted.len() != 0 {
+        for thing in unsubmitted {
+            thing.update_on_time(&assignment, &conn).unwrap();
+        }
+    }
+
     let submission = match Submissions::load_by_assignment(&assignment.assignment_id, &conn) {
         Ok(s) => s,
         Err(_) => Vec::<Submissions>::new(),
     };
 
+    let mut submissions = Vec::new();
+
     for sm in &submission {
         let attachment = attachments::table.filter(attachments::submission_id.eq(&sm.submission_id))
         .load::<Attachment>(&*conn)
         .unwrap();
-        
+
+        submissions.push(SubmissionResponse {
+            submission: sm,
+            attachment_amount: attachment.len() as i32,
+            user: ResponseUser::from(User::find_user(&sm.user_id, &conn).unwrap()),
+        });
     }
 
     let assignment_attachments = attachments::table
@@ -295,10 +317,49 @@ pub fn teachers_assignment(
     let assignment_resp = get_attachments(assignment_attachments, &conn);
 
     Ok(Json(
-        json!({"assignment_attachments": assignment_resp, "assignment": assignment, "submissions": submission}),
+        json!({"assignment_attachments": assignment_resp, "assignment": assignment, "submissions": submissions}),
     ))
 }
 
-// pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
-//     rocket.mount("/api/assignments", routes![draft, update_assignment, delete_assignment, students_assignment, teachers_assignment])
-// }
+#[get("/<class_id>/assignments/teachers/<assignment_id>/submissions/<submission_id>")]
+pub fn teachers_submission(
+    key: ClassGuard,
+    class_id: &str,
+    assignment_id: &str,
+    submission_id: &str,
+    conn: DbConn,
+) -> Result<Json<JsonValue>, Status> {
+    let user = match User::find_user(&key.0, &conn) {
+        Ok(u) => u,
+        Err(_) => return Err(Status::NotFound),
+    };
+
+    if user.is_student() {
+        return Err(Status::Forbidden);
+    }
+
+    let assignment = match Assignment::get_by_id(&assignment_id.to_string(), &conn) {
+        Ok(a) => a,
+        Err(_) => return Err(Status::NotFound),
+    };
+
+    let submission = match Submissions::find_submission(&submission_id.to_string(), &conn) {
+        Ok(s) => s,
+        Err(_) => return Err(Status::NotFound),
+    };
+
+    let submission_attachments = attachments::table
+        .filter(attachments::submission_id.eq(&submission.submission_id))
+        .load::<Attachment>(&*conn)
+        .unwrap();
+
+    let submission_resp = get_attachments(submission_attachments, &conn);
+
+    let private_comments = PrivateComment::load_by_submission(&submission.submission_id, &conn).unwrap();
+
+    let student = User::find_user(&submission.user_id, &conn).unwrap();
+
+    Ok(Json(
+        json!({"submission_attachments": submission_resp, "submission": submission, "student":student, "private_comments": private_comments}),
+    ))
+}
