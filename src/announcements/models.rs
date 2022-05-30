@@ -73,7 +73,7 @@ impl Manipulable<FillableAnnouncement> for Announcement {
         let announcement = Announcement {
             announcement_id: self.announcement_id.clone(),
             announcement_name: update.announcement_name,
-            class_id: self.class_id.clone(),
+            class_id: update.class_id,
             posted_date: self.posted_date,
             draft: false,
             body: update.body,

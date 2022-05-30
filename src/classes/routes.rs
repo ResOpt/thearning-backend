@@ -11,6 +11,7 @@ use rocket::serde::json::serde_json::json;
 use rocket::serde::json::Json;
 use rocket::{self, routes};
 use rocket_dyn_templates::handlebars::JsonValue;
+use crate::announcements::models::Announcement;
 
 use crate::assignments::routes::*;
 use crate::auth::ApiKey;
@@ -249,8 +250,10 @@ fn class(key: ClassGuard, class_id: String, conn: db::DbConn) -> Result<Json<Jso
 
     let assignments = Assignment::load(&class.class_id, &conn).unwrap();
 
+    let announcements = Announcement::load_in_class(&conn, class_id).unwrap();
+
     Ok(Json(
-        json!({"class": class, "students": students, "admins": admins, "teachers": teachers, "assignments":assignments}),
+        json!({"class": class, "students": students, "admins": admins, "teachers": teachers, "assignments":assignments, "announcements":announcements}),
     ))
 }
 
