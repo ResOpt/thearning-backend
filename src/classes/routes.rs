@@ -30,6 +30,7 @@ use crate::traits::{ClassUser, Manipulable};
 use crate::users::models::{Admin, ResponseUser, Role, Student, Teacher, User};
 use crate::utils::{load_classuser, update};
 use crate::comments::routes::*;
+use crate::announcements::routes::*;
 
 #[post("/", data = "<new_class>", rank = 1)]
 async fn create_classroom<'a>(
@@ -272,7 +273,12 @@ pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Bu
             post_comment,
             post_private_comment,
             delete_comment,
-            delete_private_comment
+            delete_private_comment,
+            draft_announcement,
+            update_announcement,
+            delete_announcement,
+            get_announcements,
+            get_announcement,
         ],
     )
 }

@@ -3,6 +3,7 @@ CREATE TABLE marks (
     submission_id VARCHAR,
     marker_id VARCHAR,
     student_id VARCHAR,
+    value INT NOT NULL,
 
     FOREIGN KEY (submission_id) REFERENCES submissions(submission_id),
     FOREIGN KEY (marker_id) REFERENCES users(user_id),

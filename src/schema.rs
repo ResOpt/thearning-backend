@@ -11,9 +11,10 @@ table! {
     announcements (announcement_id) {
         announcement_id -> Varchar,
         announcement_name -> Nullable<Varchar>,
-        class_id -> Varchar,
+        class_id -> Nullable<Varchar>,
         posted_date -> Date,
-        body -> Nullable<Text>,
+        body -> Nullable<Varchar>,
+        draft -> Bool,
         created_at -> Timestamp,
     }
 }
@@ -99,6 +100,7 @@ table! {
         submission_id -> Nullable<Varchar>,
         marker_id -> Nullable<Varchar>,
         student_id -> Nullable<Varchar>,
+        value -> Int4,
     }
 }
 

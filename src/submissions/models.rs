@@ -26,7 +26,11 @@ pub struct Submissions {
 
 #[derive(Serialize, Deserialize)]
 pub struct Mark {
-    marks: Option<i32>,
+    id: Option<i32>,
+    submission_id: String,
+    marker_id: String,
+    student_id: String,
+    value: i32,
 }
 
 #[derive(Clone)]

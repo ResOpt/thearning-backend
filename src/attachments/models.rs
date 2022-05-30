@@ -6,6 +6,7 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
+use tokio;
 
 use crate::assignments::models::Assignment;
 use crate::errors::ThearningResult;
@@ -86,11 +87,24 @@ impl Attachment {
             .load::<Self>(conn)?)
     }
 
+    pub fn load_by_announcement_id(
+        announcement_id: &String,
+        conn: &PgConnection,
+    ) -> ThearningResult<Vec<Self>> {
+        Ok(attachments::table
+            .filter(attachments::announcement_id.eq(announcement_id))
+            .load::<Self>(conn)?)
+    }
+
     pub fn delete(&self, conn: &PgConnection) -> ThearningResult<Self> {
         match &self.file_id {
             Some(id) => {
                 let file = UploadedFile::receive(id, conn)?;
-                fs::remove_file(file.file_path)?;
+
+                tokio::task::spawn(async move {
+                    tokio::fs::remove_file(file.file_path).await.unwrap();
+                });
+
                 diesel::delete(files::table.filter(files::file_id.eq(id))).execute(conn);
             }
             None => (),

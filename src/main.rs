@@ -41,6 +41,7 @@ mod submissions;
 mod tests;
 mod traits;
 mod utils;
+mod announcements;
 
 const MEDIA_URL: &str = "media";
 

@@ -69,6 +69,33 @@ impl Assignment {
 
         Ok(a)
     }
+
+    pub fn load_by_classuser(class_id: &String, user_id: &String, draft: Option<bool>, conn: &PgConnection) -> ThearningResult<Vec<Self>> {
+
+        let a = match draft {
+            Some(d) => assignments::table
+                .filter(assignments::class_id.eq(class_id))
+                .filter(assignments::draft.eq(d))
+                .filter(assignments::creator.eq(user_id))
+                .load::<Self>(conn)?,
+            None => assignments::table
+                .filter(assignments::class_id.eq(class_id))
+                .filter(assignments::creator.eq(user_id))
+                .load::<Self>(conn)?,
+        };
+
+        Ok(a)
+    }
+
+    pub fn load_by_classuser_draft(class_id: &String, user_id: &String, conn: &PgConnection) -> ThearningResult<Vec<Self>> {
+        let a = assignments::table
+            .filter(assignments::class_id.eq(class_id))
+            .filter(assignments::creator.eq(user_id))
+            .filter(assignments::draft.eq(true))
+            .load::<Self>(conn)?;
+
+        Ok(a)
+    }
 }
 
 impl Default for Assignment {

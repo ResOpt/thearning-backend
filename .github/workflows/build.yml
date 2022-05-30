@@ -54,9 +54,9 @@ jobs:
           test_password: ${{ secrets.TEST_PASSWORD }}
           test_server: ${{ secrets.TEST_SERVER }}
         run: |
-          export TEST_EMAIL=$test_email
-          export TEST_PASSWORD=$test_password
-          export TEST_SERVER=$test_server
+          export EMAIL=$test_email
+          export EMAIL_PASSWORD=$test_password
+          export SMTP_SERVER=$test_server
           mkdir -p media/classes media/profiles media/attachments
           cargo test -- --test-threads 1
           rm -rf media

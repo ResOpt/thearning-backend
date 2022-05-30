@@ -1,28 +1,24 @@
-use chrono::Local;
-use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
-use rocket::http::{RawStr, Status};
+use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
+use rocket::http::Status;
 use rocket::serde::json::serde_json::json;
 use rocket::serde::json::Json;
-use rocket::serde::{Deserialize, Serialize};
+use rocket::serde::Serialize;
 use rocket_dyn_templates::handlebars::JsonValue;
 use tokio;
 
 use crate::assignments::models::AssignmentData;
-use crate::assignments::models::{Assignment, FillableAssignments};
+use crate::assignments::models::Assignment;
 use crate::attachments::models::Attachment;
-use crate::auth::{ApiKey, ClassGuard};
-use crate::comments::models::{Comment, Commenter, PrivateComment};
-use crate::db;
+use crate::auth::ClassGuard;
+use crate::comments::models::{Comment, PrivateComment};
+use crate::{db, utils};
 use crate::db::DbConn;
-use crate::files::models::UploadedFile;
-use crate::links::models::Link;
 use crate::schema::attachments;
 use crate::submissions::models::{FillableSubmissions, Submissions};
-use crate::traits::Embedable;
 use crate::traits::{ClassUser, Manipulable};
-use crate::users::models::{Student, User, ResponseUser};
+use crate::users::models::{ResponseUser, Student, User};
 use crate::users::routes::get_user;
-use crate::utils::{generate_random_id, update, mailer};
+use crate::utils::{send_mail, update};
 
 #[post("/<class_id>/assignments")]
 pub fn draft(key: ClassGuard, class_id: &str, conn: db::DbConn) -> Result<Json<JsonValue>, Status> {
@@ -73,17 +69,6 @@ pub async fn update_assignment(
     for i in &students {
         emails.push(User::find_user(&i.user_id, &conn).unwrap().email)
     }
-    
-    send_mail(creator, emails, new.clone()).await;
-
-    Ok(Json(json!({ "new_assignment": new })))
-}
-
-async fn send_mail(user: User, emails: Vec<String>, assignment: Assignment) {
-
-    let mail = mailer().0;
-
-    let server = mailer().1;
 
     let html = format!(r#"<!DOCTYPE html>
 <html lang="en">
@@ -99,17 +84,11 @@ async fn send_mail(user: User, emails: Vec<String>, assignment: Assignment) {
         <h4 style="font-family: Arial, Helvetica, sans-serif;">{}</h4>
     </div>
 </body>
-</html>"#, &user.fullname, &assignment.assignment_name.unwrap(), &assignment.instructions.unwrap());
+</html>"#, &creator.fullname, &new.assignment_name.as_ref().unwrap(), &new.instructions.as_ref().unwrap());
+    
+    send_mail(creator, emails, html, "New Assignment").await;
 
-    let mail = mail.clone().server(server)
-                            .subject("New Assignment");
-
-    for email in emails {
-        let send = mail.clone().to(email.as_str()).message(html.as_str(), "H").clone().send();
-        let job = tokio::task::spawn(async move {
-            send.await.unwrap()
-        });
-    }
+    Ok(Json(json!({ "new_assignment": &new })))
 }
 
 #[delete("/<class_id>/assignments/<assignment_id>")]
@@ -150,58 +129,6 @@ pub fn delete_assignment(
     Ok(Status::Ok)
 }
 
-#[derive(Serialize)]
-struct AssignmentResponse {
-    attachment: Attachment,
-    file: Option<UploadedFile>,
-    link: Option<Link>,
-}
-
-fn get_attachments(vec: Vec<Attachment>, conn: &PgConnection) -> Vec<AssignmentResponse> {
-    let mut res = Vec::<AssignmentResponse>::new();
-
-    for thing in vec {
-        let resp = AssignmentResponse {
-            attachment: thing.clone(),
-            file: match &thing.file_id {
-                Some(id) => Some(UploadedFile::receive(id, conn).unwrap()),
-                None => None,
-            },
-            link: match &thing.link_id {
-                Some(id) => Some(Link::receive(id, conn).unwrap()),
-                None => None,
-            },
-        };
-        res.push(resp)
-    }
-
-    res
-}
-
-fn get_comments<'a, T>(vec: &'a Vec<T>, conn: &PgConnection) -> Vec<UserComment<'a, T>>
-where T: Commenter<Output=String> + Serialize {
-    let mut res = Vec::<UserComment<T>>::new();
-
-    for thing in vec {
-        let resp = UserComment {
-            commenter: {
-                let user = User::find_user(thing.get_user_id(), &conn).unwrap();
-                ResponseUser::from(user)
-            },
-            comment: thing,
-        };
-        res.push(resp)
-    }
-
-    res
-}
-
-#[derive(Serialize)]
-struct UserComment<'a, T: Serialize + Commenter> {
-    commenter: ResponseUser,
-    comment: &'a T,
-}
-
 #[get("/<class_id>/assignments/students/<assignment_id>")]
 pub fn students_assignment(
     key: ClassGuard,
@@ -225,7 +152,7 @@ pub fn students_assignment(
 
     let comments = Comment::load_by_assignment(&assignment.assignment_id, &conn).unwrap();
 
-    let comment_response = get_comments(&comments, &conn);
+    let comment_response = utils::get_comments(&comments, &conn);
 
     let assignment_attachments = attachments::table
         .filter(attachments::assignment_id.eq(&assignment.assignment_id))
@@ -238,16 +165,16 @@ pub fn students_assignment(
     let private_comments =
         PrivateComment::load_by_submission(&submission.submission_id, &conn).unwrap();
 
-    let private_comment_response = get_comments(&private_comments, &conn);
+    let private_comment_response = utils::get_comments(&private_comments, &conn);
 
     let submission_attachments = attachments::table
         .filter(attachments::submission_id.eq(&submission.submission_id))
         .load::<Attachment>(&*conn)
         .unwrap();
 
-    let assignment_resp = get_attachments(assignment_attachments, &conn);
+    let assignment_resp = utils::get_attachments(&assignment_attachments, &conn);
 
-    let submission_resp = get_attachments(submission_attachments, &conn);
+    let submission_resp = utils::get_attachments(&submission_attachments, &conn);
 
     Ok(Json(
         json!({"assignment_attachments": assignment_resp, "assignment": assignment, "submission": submission, "submission_attachments": submission_resp, "comments": comment_response, "private_comments": private_comment_response}),
@@ -314,10 +241,14 @@ pub fn teachers_assignment(
         .load::<Attachment>(&*conn)
         .unwrap();
 
-    let assignment_resp = get_attachments(assignment_attachments, &conn);
+    let assignment_resp = utils::get_attachments(&assignment_attachments, &conn);
+
+    let comments = Comment::load_by_assignment(&assignment.assignment_id, &conn).unwrap();
+
+    let comment_response = utils::get_comments(&comments, &conn);
 
     Ok(Json(
-        json!({"assignment_attachments": assignment_resp, "assignment": assignment, "submissions": submissions}),
+        json!({"assignment_attachments": assignment_resp, "assignment": assignment, "submissions": submissions, "comments": comment_response}),
     ))
 }
 
@@ -353,7 +284,7 @@ pub fn teachers_submission(
         .load::<Attachment>(&*conn)
         .unwrap();
 
-    let submission_resp = get_attachments(submission_attachments, &conn);
+    let submission_resp = utils::get_attachments(&submission_attachments, &conn);
 
     let private_comments = PrivateComment::load_by_submission(&submission.submission_id, &conn).unwrap();
 
@@ -362,4 +293,29 @@ pub fn teachers_submission(
     Ok(Json(
         json!({"submission_attachments": submission_resp, "submission": submission, "student":student, "private_comments": private_comments}),
     ))
+}
+
+#[get("/<class_id>/assignments/teachers/<teacher_id>?<draft>")]
+fn all_teachers_assigment(
+    key: ClassGuard,
+    class_id: &str,
+    teacher_id: &str,
+    draft: Option<bool>,
+    conn: DbConn,
+) -> Result<Json<JsonValue>, Status> {
+    let user = match User::find_user(&key.0, &conn) {
+        Ok(u) => u,
+        Err(_) => return Err(Status::NotFound),
+    };
+
+    if user.is_student() {
+        return Err(Status::Forbidden);
+    }
+
+    let assignments = match Assignment::load_by_classuser(&teacher_id.to_string(), &user.user_id, draft, &conn) {
+        Ok(a) => a,
+        Err(_) => return Err(Status::NotFound),
+    };
+
+    Ok(Json(json!({"assignments": assignments})))
 }

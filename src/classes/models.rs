@@ -120,11 +120,18 @@ impl Manipulable<Self> for Classroom {
     }
 
     fn delete(&self, conn: &PgConnection) -> ThearningResult<Self> {
-        todo!()
+        diesel::delete(classes::table.filter(classes::class_id.eq(&self.class_id)))
+            .execute(conn)?;
+
+        let res = classes::dsl::classes
+            .find(&self.class_id)
+            .get_result::<Self>(conn)?;
+
+        Ok(res)
     }
 
     fn get_all(conn: &PgConnection) -> ThearningResult<Vec<Self>> {
-        todo!()
+        Ok(classes::table.load::<Self>(conn)?)
     }
 }
 

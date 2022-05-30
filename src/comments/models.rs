@@ -58,6 +58,15 @@ impl Comment {
             .filter(comments::assignment_id.eq(assignment_id))
             .load::<Comment>(conn)?)
     }
+
+    pub fn load_by_announcement(
+        announcement_id: &str,
+        conn: &PgConnection,
+    ) -> ThearningResult<Vec<Self>> {
+        Ok(comments::table
+            .filter(comments::announcement_id.eq(announcement_id))
+            .load::<Comment>(conn)?)
+    }
 }
 
 impl PrivateComment {
