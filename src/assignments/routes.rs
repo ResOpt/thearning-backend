@@ -75,7 +75,7 @@ pub async fn update_assignment(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello from Lettre!</title>
+    <title>New Assignment!</title>
 </head>
 <body>
     <div style="display: block; align-items: center;">

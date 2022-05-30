@@ -7,9 +7,9 @@ use crate::auth::ClassGuard;
 use crate::{db, Status};
 use crate::attachments::models::Attachment;
 use crate::comments::models::Comment;
-use crate::traits::Manipulable;
-use crate::users::models::User;
-use crate::utils::{get_attachments, get_comments};
+use crate::traits::{ClassUser, Manipulable};
+use crate::users::models::{Student, User};
+use crate::utils::{get_attachments, get_comments, send_mail};
 
 #[get("/<class_id>/announcements")]
 pub fn get_announcements(key: ClassGuard, class_id: &str, conn: db::DbConn) -> Json<Vec<Announcement>> {
@@ -46,7 +46,7 @@ pub fn draft_announcement(key: ClassGuard, class_id: &str, conn: db::DbConn) -> 
 }
 
 #[patch("/<class_id>/announcements", data = "<announcement>")]
-pub fn update_announcement(key: ClassGuard, class_id: &str, announcement: Json<FillableAnnouncement>, conn: db::DbConn) -> Result<Json<Announcement>, Status> {
+pub async fn update_announcement(key: ClassGuard, class_id: &str, announcement: Json<FillableAnnouncement>, conn: db::DbConn) -> Result<Json<Announcement>, Status> {
     let data = announcement.into_inner();
 
     let creator = match User::find_user(&key.0, &conn)
@@ -64,16 +64,26 @@ pub fn update_announcement(key: ClassGuard, class_id: &str, announcement: Json<F
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello from Lettre!</title>
+    <title>New Announcement!</title>
 </head>
 <body>
     <div style="display: block; align-items: center;">
-        <h2 style="font-family: Arial, Helvetica, sans-serif;">New Assignment from {}: {}</h2>
+        <h2 style="font-family: Arial, Helvetica, sans-serif;">New Announcement from {}: {}</h2>
         <br>
         <h4 style="font-family: Arial, Helvetica, sans-serif;">{}</h4>
     </div>
 </body>
 </html>"#, &creator.fullname, &update.announcement_name.as_ref().unwrap(), &update.body.as_ref().unwrap());
+
+    let students = Student::load_in_class(&class_id.to_string(), &conn).unwrap();
+
+    let mut emails = Vec::new();
+
+    for i in &students {
+        emails.push(User::find_user(&i.user_id, &conn).unwrap().email)
+    }
+
+    send_mail(creator, emails, html, "New Announcement").await;
 
     Ok(Json(update))
 }
