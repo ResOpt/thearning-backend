@@ -295,7 +295,7 @@ pub fn teachers_submissions(
     ))
 }
 
-#[get("/<class_id>/assignments/teachers/<teacher_id>?<draft>")]
+#[get("/<class_id>/assignments/teachers/<teacher_id>?<draft>", rank = 2)]
 pub fn all_teachers_assignments(
     key: ClassGuard,
     class_id: &str,
