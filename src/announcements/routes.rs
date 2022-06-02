@@ -73,7 +73,7 @@ pub async fn update_announcement(key: ClassGuard, class_id: &str, announcement: 
         <h4 style="font-family: Arial, Helvetica, sans-serif;">{}</h4>
     </div>
 </body>
-</html>"#, &creator.fullname, &update.announcement_name.as_ref().unwrap(), &update.body.as_ref().unwrap());
+</html>"#, &creator.fullname, &update.announcement_name.as_ref().unwrap_or(&" ".to_string()), &update.body.as_ref().unwrap_or(&" ".to_string()));
 
     let students = Student::load_in_class(&class_id.to_string(), &conn).unwrap();
 

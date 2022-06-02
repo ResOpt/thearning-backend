@@ -101,6 +101,7 @@ table! {
         marker_id -> Nullable<Varchar>,
         student_id -> Nullable<Varchar>,
         value -> Int4,
+        created_at -> Timestamp,
     }
 }
 

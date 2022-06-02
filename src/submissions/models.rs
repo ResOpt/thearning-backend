@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::assignments::models::Assignment;
 use crate::errors::ThearningResult;
-use crate::schema::submissions;
+use crate::schema::{marks, submissions};
 use crate::traits::Manipulable;
 use crate::utils::generate_random_id;
 
@@ -24,13 +24,23 @@ pub struct Submissions {
     pub created_at: NaiveDateTime,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Insertable, AsChangeset, Clone, Queryable)]
+#[table_name = "marks"]
 pub struct Mark {
-    id: Option<i32>,
-    submission_id: String,
-    marker_id: String,
-    student_id: String,
-    value: i32,
+    pub id: String,
+    pub submission_id: Option<String>,
+    pub marker_id: Option<String>,
+    pub student_id: Option<String>,
+    pub value: i32,
+    pub created_at: NaiveDateTime,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct FillableMark {
+    pub submission_id: Option<String>,
+    pub marker_id: Option<String>,
+    pub student_id: Option<String>,
+    pub value: i32,
 }
 
 #[derive(Clone)]
@@ -48,6 +58,12 @@ impl Submissions {
         Ok(submissions::table
             .filter(submissions::user_id.eq(user_id))
             .filter(submissions::assignment_id.eq(assignment_id))
+            .get_result::<Self>(conn)?)
+    }
+
+    pub fn mark(&self, value: &i32, conn: &PgConnection) -> ThearningResult<Self> {
+        Ok(diesel::update(submissions::table.find(&self.submission_id))
+            .set(submissions::marks_allotted.eq(value))
             .get_result::<Self>(conn)?)
     }
 
@@ -229,6 +245,74 @@ impl Manipulable<FillableSubmissions> for Submissions {
 
     fn update(&self, update: FillableSubmissions, conn: &PgConnection) -> ThearningResult<Self> {
         todo!()
+    }
+
+    fn delete(&self, conn: &PgConnection) -> ThearningResult<Self> {
+        todo!()
+    }
+
+    fn get_all(conn: &PgConnection) -> ThearningResult<Vec<Self>> {
+        todo!()
+    }
+}
+
+impl Mark {
+    pub fn get_by_id(id: &str, conn: &PgConnection) -> ThearningResult<Self> {
+        Ok(marks::table
+            .find(id)
+            .get_result::<Self>(conn)?)
+    }
+
+    pub fn get_by_submission_id(
+        submission_id: &String,
+        conn: &PgConnection,
+    ) -> ThearningResult<Self> {
+        Ok(marks::table
+            .filter(marks::submission_id.eq(Some(submission_id)))
+            .get_result::<Self>(conn)?)
+    }
+}
+
+impl Manipulable<FillableMark> for Mark {
+    fn create(new_data: FillableMark, conn: &PgConnection) -> ThearningResult<Self> {
+        let submission = Submissions::find_submission(&new_data.submission_id.as_ref().unwrap(), conn)?;
+
+        let mark = Mark {
+            id: format!("{}{}", generate_random_id(), generate_random_id()),
+            submission_id: new_data.submission_id,
+            marker_id: new_data.marker_id,
+            student_id: Option::from(submission.user_id),
+            value: new_data.value,
+            created_at: Local::now().naive_local(),
+        };
+
+        diesel::insert_into(marks::table)
+            .values(&mark)
+            .execute(conn)?;
+
+        let res = marks::table
+            .find(mark.id)
+            .get_result::<Self>(conn)?;
+
+        Ok(res)
+    }
+
+    fn update(&self, update: FillableMark, conn: &PgConnection) -> ThearningResult<Self> {
+
+        let mark = Mark {
+            id: self.id.to_string(),
+            submission_id: self.submission_id.clone(),
+            marker_id: update.marker_id.clone(),
+            student_id: self.student_id.clone(),
+            value: update.value,
+            created_at: self.created_at,
+        };
+
+        diesel::update(marks::table.find(&mark.id))
+            .set(&mark)
+            .execute(conn)?;
+
+        Ok(marks::table.find(&mark.id).get_result::<Self>(conn)?)
     }
 
     fn delete(&self, conn: &PgConnection) -> ThearningResult<Self> {

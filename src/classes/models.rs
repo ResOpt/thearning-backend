@@ -107,6 +107,7 @@ impl Manipulable<Self> for Classroom {
             .set((
                 classes::class_name.eq(&update.class_name),
                 classes::class_creator.eq(&update.class_creator),
+                classes::section.eq(&update.section),
                 classes::class_image.eq(&update.class_image),
                 classes::class_description.eq(&update.class_description),
             ))

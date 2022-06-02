@@ -4,6 +4,7 @@ CREATE TABLE marks (
     marker_id VARCHAR,
     student_id VARCHAR,
     value INT NOT NULL,
+    created_at TIMESTAMP NOT NULL,
 
     FOREIGN KEY (submission_id) REFERENCES submissions(submission_id),
     FOREIGN KEY (marker_id) REFERENCES users(user_id),

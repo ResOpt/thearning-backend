@@ -257,6 +257,65 @@ fn class(key: ClassGuard, class_id: String, conn: db::DbConn) -> Result<Json<Jso
     ))
 }
 
+#[patch("/<class_id>", data = "<new_class>")]
+async fn update_class<'a>(
+    key: ApiKey,
+    class_id: String,
+    new_class: Form<NewClassroom<'a>>,
+    conn: db::DbConn,
+) -> Result<Json<JsonValue>, Status> {
+    let new_class = new_class.into_inner();
+
+    let user = User::find_user(&key.0, &conn).unwrap();
+
+    let class = match Classroom::find(&class_id, &conn) {
+        Ok(c) => c,
+        Err(_) => return Err(Status::NotFound),
+    };
+
+    let cloned_class = class.clone();
+
+    let image_file = match new_class.image {
+        Some(img) => match routes::process_image(
+            img,
+            UploadType::ClassPicture,
+            &new_class.file_name.unwrap_or("filename.jpg".to_string()),
+        )
+            .await
+        {
+            Ok(v) => Some(v),
+            Err(_) => return Err(Status::BadRequest),
+        },
+        None => {
+            None
+        }
+    };
+
+    let update_ = Classroom {
+        class_id: class_id,
+        class_name: new_class.class_name,
+        class_creator: Option::from(user.user_id),
+        class_description: new_class.class_description,
+        class_image: match image_file {
+            Some(v) => Some(v),
+            None => class.class_image,
+        },
+        section: new_class.section,
+        created_at: class.created_at,
+    };
+
+    match User::get_role(&key.0, &conn).unwrap() {
+        Role::Admin => {
+            update(cloned_class, update_, &conn);
+        }
+        _ => {
+            return Err(Status::Forbidden);
+        }
+    }
+
+    Ok(Json(json!({"status":200})))
+}
+
 pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     rocket.mount(
         "/api/classroom",
@@ -284,6 +343,9 @@ pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Bu
             delete_announcement,
             get_announcements,
             get_announcement,
+            mark_submission,
+            update_mark,
+            update_class
         ],
     )
 }
