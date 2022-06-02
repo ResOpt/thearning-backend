@@ -62,7 +62,7 @@ impl Submissions {
     }
 
     pub fn mark(&self, value: &i32, conn: &PgConnection) -> ThearningResult<Self> {
-        Ok(diesel::update(submissions::table.find(&self.submission_id))
+        Ok(diesel::update(submissions::table.filter(submissions::submission_id.eq(&self.submission_id)))
             .set(submissions::marks_allotted.eq(value))
             .get_result::<Self>(conn)?)
     }
@@ -268,7 +268,7 @@ impl Mark {
         conn: &PgConnection,
     ) -> ThearningResult<Self> {
         Ok(marks::table
-            .filter(marks::submission_id.eq(Some(submission_id)))
+            .filter(marks::submission_id.eq(submission_id))
             .get_result::<Self>(conn)?)
     }
 }

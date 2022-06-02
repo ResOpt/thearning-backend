@@ -149,9 +149,9 @@ pub fn update_mark(
 
     let submission = Submissions::find_submission(&submission_id.to_string(), &conn).unwrap();
 
-    submission.mark(&this_mark.value, &conn).unwrap();
+    let up = update(this_mark, mark, &conn).unwrap();
 
-    update(this_mark, mark, &conn).unwrap();
+    submission.mark(&up.value, &conn).unwrap();
 
     Ok(Status::Ok)
 }
