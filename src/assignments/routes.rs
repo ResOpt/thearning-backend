@@ -253,7 +253,7 @@ pub fn teachers_assignment(
 }
 
 #[get("/<class_id>/assignments/teachers/<assignment_id>/submissions/<submission_id>")]
-pub fn teachers_submission(
+pub fn teachers_submissions(
     key: ClassGuard,
     class_id: &str,
     assignment_id: &str,
@@ -296,7 +296,7 @@ pub fn teachers_submission(
 }
 
 #[get("/<class_id>/assignments/teachers/<teacher_id>?<draft>")]
-fn all_teachers_assigment(
+pub fn all_teachers_assignments(
     key: ClassGuard,
     class_id: &str,
     teacher_id: &str,

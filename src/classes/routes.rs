@@ -273,6 +273,8 @@ pub fn mount(rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Bu
             teachers_assignment,
             submit_submission,
             unsubmit_submission,
+            teachers_submissions,
+            all_teachers_assignments,
             post_comment,
             post_private_comment,
             delete_comment,
